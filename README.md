@@ -1,4 +1,4 @@
-# HireMind AI 🚀
+# HireMind AI - Smart Interview Preparation Evaluation Platform🚀
 
 Smart Interview Preparation & Evaluation Platform
 
