@@ -1,77 +1,88 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+// src/components/Layout.jsx
 
-const Layout = ({ children }) => {
-  const [menuOpen, setMenuOpen] = useState(false);
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import { LayoutDashboard, Brain, User, LogOut } from "lucide-react";
+
+const Layout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     localStorage.clear();
     navigate("/");
   };
 
+  const isActive = (path) => location.pathname === path;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 relative overflow-hidden">
+    <div className="min-h-screen flex bg-gray-50">
 
-      {/* Background */}
-      <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-blue-300/20 blur-[100px] rounded-full" />
-      <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-indigo-300/20 blur-[100px] rounded-full" />
-
-      <div className="relative z-10 flex min-h-screen">
-
-        {/* 📱 MOBILE TOP BAR */}
-        <div className="fixed top-0 left-0 right-0 md:hidden flex justify-between items-center px-4 py-3 bg-white/80 backdrop-blur shadow z-50">
-          <h2 className="text-lg font-bold text-blue-600">HireMind</h2>
-          <button onClick={() => setMenuOpen(true)}>☰</button>
-        </div>
-
-        {/* 📱 MOBILE DRAWER */}
-        {menuOpen && (
-          <div className="fixed inset-0 z-50 flex">
-            <div
-              className="absolute inset-0 bg-black/30"
-              onClick={() => setMenuOpen(false)}
-            />
-
-            <div className="relative w-64 bg-white p-6 shadow-lg">
-              <h2 className="text-xl font-bold text-blue-600 mb-6">
-                HireMind AI
-              </h2>
-
-              <nav className="space-y-4">
-                <button onClick={() => {navigate("/dashboard"); setMenuOpen(false);}}>Dashboard</button>
-                <button onClick={() => {navigate("/interviewprep"); setMenuOpen(false);}}>Interview Prep</button>
-                <button>Profile</button>
-                <button onClick={handleLogout} className="text-red-500">
-                  Logout
-                </button>
-              </nav>
-            </div>
-          </div>
-        )}
-
-        {/* 💻 DESKTOP SIDEBAR */}
-        <aside className="hidden md:block w-64 bg-white/70 backdrop-blur-xl shadow-lg p-6 border-r">
-          <h2 className="text-2xl font-bold text-blue-600 mb-8">
+      {/* SIDEBAR */}
+      <aside className="w-64 bg-white border-r p-6 hidden md:flex flex-col justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-blue-600 mb-10">
             HireMind AI
           </h2>
 
-          <nav className="space-y-4">
-            <button onClick={() => navigate("/dashboard")}>Dashboard</button>
-            <button onClick={() => navigate("/interviewprep")}>Interview Prep</button>
-            <button>Profile</button>
-            <button onClick={handleLogout} className="text-red-500 mt-6">
-              Logout
-            </button>
+          <nav className="space-y-2">
+
+            <SidebarItem
+              icon={<LayoutDashboard size={18} />}
+              active={isActive("/dashboard")}
+              onClick={() => navigate("/dashboard")}
+            >
+              Dashboard
+            </SidebarItem>
+
+            <SidebarItem
+              icon={<Brain size={18} />}
+              active={isActive("/interviewprep")}
+              onClick={() => navigate("/interviewprep")}
+            >
+              Interview Prep
+            </SidebarItem>
+
+            <SidebarItem
+              icon={<User size={18} />}
+              active={isActive("/profile")}
+              onClick={() => navigate("/profile")}
+            >
+              Profile
+            </SidebarItem>
+
           </nav>
-        </aside>
+        </div>
 
-        {/* 📦 MAIN CONTENT */}
-        <main className="flex-1 p-4 md:p-6 mt-14 md:mt-0">
-          {children}
-        </main>
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 text-red-500 text-sm"
+        >
+          <LogOut size={16} />
+          Logout
+        </button>
+      </aside>
 
-      </div>
+      {/* PAGE CONTENT */}
+      <main className="flex-1 p-6">
+        <Outlet />
+      </main>
+    </div>
+  );
+};
+
+/* Sidebar Item */
+const SidebarItem = ({ icon, children, active, onClick }) => {
+  return (
+    <div
+      onClick={onClick}
+      className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer text-sm ${
+        active
+          ? "bg-blue-50 text-blue-600 font-semibold"
+          : "text-gray-600 hover:bg-gray-100"
+      }`}
+    >
+      {icon}
+      {children}
     </div>
   );
 };

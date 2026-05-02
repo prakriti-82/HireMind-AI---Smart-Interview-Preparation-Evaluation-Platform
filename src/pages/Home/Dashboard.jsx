@@ -1,9 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "../../utils/axiosInstance";
+
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState({
@@ -11,37 +21,34 @@ const Dashboard = () => {
     questions: 0,
     accuracy: 0,
   });
-  const [loading, setLoading] = useState(true);
-  const [openSidebar, setOpenSidebar] = useState(false);
+
+  const [chartData, setChartData] = useState([]);
 
   useEffect(() => {
     const init = async () => {
       try {
-        const token = localStorage.getItem("accessToken");
-        const storedUser = localStorage.getItem("user");
-
-        if (!token) {
-          navigate("/");
-          return;
-        }
-
+        const storedUser = JSON.parse(localStorage.getItem("user"));
         if (!storedUser) {
-          localStorage.clear();
           navigate("/");
           return;
         }
 
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
+        setUser(storedUser);
 
         const res = await axios.get("/user/stats");
         setStats(res.data);
-      } catch (err) {
-        console.error("Dashboard error:", err);
-        localStorage.clear();
+
+        setChartData(
+          res.data.history || [
+            { day: "Mon", score: 4 },
+            { day: "Tue", score: 6 },
+            { day: "Wed", score: 7 },
+            { day: "Thu", score: 8 },
+            { day: "Fri", score: 6 },
+          ]
+        );
+      } catch {
         navigate("/");
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -53,164 +60,140 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen text-gray-500">
-        Loading dashboard...
-      </div>
-    );
-  }
+  const isActive = (path) =>
+    location.pathname === path
+      ? "bg-blue-100 text-blue-600"
+      : "text-gray-600 hover:text-blue-600";
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="w-full min-h-screen bg-gradient-to-br from-blue-100 via-white to-blue-50 relative overflow-hidden">
 
       {/* Background blobs */}
       <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-blue-300/20 blur-[100px] rounded-full" />
       <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-indigo-300/20 blur-[100px] rounded-full" />
 
-      <div className="relative z-10 flex min-h-screen">
+      {/* CONTENT */}
+      <div className="relative z-10 p-6 md:p-10">
 
-        {/* MOBILE HEADER */}
-        <div className="md:hidden fixed top-0 left-0 w-full bg-white/80 backdrop-blur-md shadow px-4 py-3 flex justify-between items-center z-50">
-          <h2 className="font-bold text-blue-600">HireMind AI</h2>
-          <button onClick={() => setOpenSidebar(true)} className="text-xl">
-            ☰
-          </button>
-        </div>
+        {/* NAVBAR */}
+        <div className="flex justify-between items-center mb-8 bg-white/70 backdrop-blur-xl px-4 py-3 rounded-xl shadow-sm">
 
-        {/* SIDEBAR */}
-        <aside
-          className={`
-            fixed md:static top-0 left-0 h-full w-64 
-            bg-white/80 backdrop-blur-xl shadow-lg p-6 z-50
-            transform transition-transform duration-300
-            ${openSidebar ? "translate-x-0" : "-translate-x-full"} 
-            md:translate-x-0
-          `}
-        >
-          <div className="md:hidden flex justify-end mb-4">
-            <button onClick={() => setOpenSidebar(false)}>✕</button>
-          </div>
-
-          <h2 className="text-2xl font-bold text-blue-600 mb-8">
+          <h2 className="text-lg font-bold text-blue-600">
             HireMind AI
           </h2>
 
-          <nav className="space-y-4">
-            <button className="block w-full text-left text-gray-700 hover:text-blue-600">
+          <div className="flex items-center gap-3 text-sm">
+
+            <button
+              onClick={() => navigate("/dashboard")}
+              className={`px-3 py-1.5 rounded-lg transition ${isActive("/dashboard")}`}
+            >
               Dashboard
             </button>
 
             <button
-              onClick={() => {
-                navigate("/interviewprep");
-                setOpenSidebar(false);
-              }}
-              className="block w-full text-left text-gray-700 hover:text-blue-600"
+              onClick={() => navigate("/interviewprep")}
+              className={`px-3 py-1.5 rounded-lg transition ${isActive("/interviewprep")}`}
             >
-              Interview Prep
+              Interview
             </button>
 
-            <button className="block w-full text-left text-gray-700 hover:text-blue-600">
+            <button
+              onClick={() => navigate("/profile")}
+              className={`px-3 py-1.5 rounded-lg transition ${isActive("/profilepage")}`}
+            >
               Profile
             </button>
 
             <button
               onClick={handleLogout}
-              className="block w-full text-left text-red-500 mt-6"
+              className="text-red-500 ml-2"
             >
               Logout
             </button>
-          </nav>
-        </aside>
-
-        {/* OVERLAY */}
-        {openSidebar && (
-          <div
-            className="fixed inset-0 bg-black/30 z-40 md:hidden"
-            onClick={() => setOpenSidebar(false)}
-          />
-        )}
-
-        {/* MAIN */}
-        <div className="flex-1 p-4 md:p-6 mt-14 md:mt-0">
-
-          {/* HEADER */}
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-xl md:text-2xl font-bold text-gray-800">
-              Dashboard
-            </h1>
-
-            <div className="flex items-center gap-2 md:gap-3 bg-white px-3 py-1.5 rounded-full shadow-sm">
-              {user?.picture ? (
-                <img
-                  src={user.picture}
-                  alt="profile"
-                  className="w-8 h-8 md:w-9 md:h-9 rounded-full object-cover border"
-                />
-              ) : (
-                <div className="w-8 h-8 md:w-9 md:h-9 bg-blue-500 text-white flex items-center justify-center rounded-full text-sm">
-                  {user?.email?.charAt(0)?.toUpperCase() || "U"}
-                </div>
-              )}
-
-              <span className="text-xs md:text-sm font-medium text-gray-700 max-w-[90px] md:max-w-[120px] truncate">
-                {user?.name || user?.email}
-              </span>
-            </div>
-          </div>
-
-          {/* STATS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
-
-            <div className="relative p-5 rounded-xl bg-gradient-to-br from-blue-50 to-white shadow border 
-            hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <h3 className="text-blue-600 text-sm">Interviews</h3>
-              <p className="text-2xl font-bold text-blue-700 mt-2">
-                {stats.interviews}
-              </p>
-            </div>
-
-            <div className="relative p-5 rounded-xl bg-gradient-to-br from-green-50 to-white shadow border 
-            hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <h3 className="text-green-600 text-sm">Questions</h3>
-              <p className="text-2xl font-bold text-green-700 mt-2">
-                {stats.questions}
-              </p>
-            </div>
-
-            <div className="relative p-5 rounded-xl bg-gradient-to-br from-indigo-50 to-white shadow border 
-            hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <h3 className="text-indigo-600 text-sm">Accuracy</h3>
-              <p className="text-2xl font-bold text-indigo-700 mt-2">
-                {stats.accuracy}%
-              </p>
-            </div>
 
           </div>
-
-          {/* ACTIVITY */}
-          <div className="bg-white/80 backdrop-blur-xl p-5 md:p-6 rounded-xl shadow 
-          hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-            <h2 className="text-lg font-semibold mb-4">
-              Recent Activity
-            </h2>
-
-            <ul className="space-y-3 text-gray-600 text-sm md:text-base">
-              <li className="border-b pb-2">
-                Completed React Interview Practice
-              </li>
-              <li className="border-b pb-2">
-                Solved 10 DSA Questions
-              </li>
-              <li className="border-b pb-2">
-                Started System Design Module
-              </li>
-            </ul>
-          </div>
-
         </div>
+
+        {/* HEADER */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <p className="text-gray-500 text-sm">Welcome back 👋</p>
+            <h1 className="text-2xl font-semibold">
+              {user?.name || "User"}
+            </h1>
+          </div>
+
+          <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center">
+            {user?.email?.charAt(0)?.toUpperCase()}
+          </div>
+        </div>
+
+        {/* STATS */}
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <StatCard title="Interviews" value={stats.interviews} color="blue" />
+          <StatCard title="Questions" value={stats.questions} color="green" />
+          <StatCard title="Accuracy" value={`${stats.accuracy}%`} color="purple" />
+        </div>
+
+        {/* CHART */}
+        <div className="bg-white/80 backdrop-blur-xl p-6 rounded-2xl shadow-sm mb-8 hover:shadow-xl transition">
+          <h2 className="text-lg font-semibold mb-4">
+            Performance Trend
+          </h2>
+
+          {chartData.length === 0 ? (
+            <p className="text-gray-400">No performance data yet</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={chartData}>
+                <XAxis dataKey="day" />
+                <YAxis />
+                <Tooltip />
+                <Line
+                  type="monotone"
+                  dataKey="score"
+                  stroke="#6366f1"
+                  strokeWidth={3}
+                  dot={{ r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* ACTIVITY */}
+        <div className="bg-white/80 backdrop-blur-xl p-6 rounded-2xl shadow-sm hover:shadow-xl transition">
+          <h2 className="text-lg font-semibold mb-4">
+            Recent Activity
+          </h2>
+
+          <ul className="space-y-3 text-gray-600">
+            <li>Completed interview session</li>
+            <li>Answered 10 questions</li>
+            <li>Improved score to 8/10</li>
+          </ul>
+        </div>
+
       </div>
+    </div>
+  );
+};
+
+/* ✅ FIXED StatCard */
+const colorMap = {
+  blue: "text-blue-600",
+  green: "text-green-600",
+  purple: "text-purple-600",
+};
+
+const StatCard = ({ title, value, color }) => {
+  return (
+    <div className="bg-white/80 backdrop-blur-xl p-6 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+      <p className={`text-sm ${colorMap[color]}`}>{title}</p>
+      <h2 className={`text-3xl font-bold mt-2 ${colorMap[color]}`}>
+        {value}
+      </h2>
     </div>
   );
 };
