@@ -1,22 +1,31 @@
 import React, { useEffect, useState } from "react";
 
 const ProfilePage = () => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState({
+    name: "",
+    email: "",
+  });
+
   const [preview, setPreview] = useState(null);
 
- useEffect(() => {
-  const storedUser = localStorage.getItem("user");
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
 
-  if (storedUser && storedUser !== "undefined") {
-    try {
-      const parsedUser = JSON.parse(storedUser);
-      setUser(parsedUser);
-      setPreview(parsedUser.picture);
-    } catch (err) {
-      console.error("Invalid user in localStorage", err);
+    if (storedUser && storedUser !== "undefined") {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+
+        setUser({
+          name: parsedUser.name || "",
+          email: parsedUser.email || "",
+        });
+
+        setPreview(parsedUser.picture);
+      } catch (err) {
+        console.error("Invalid user in localStorage", err);
+      }
     }
-  }
-}, []);
+  }, []);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -24,6 +33,16 @@ const ProfilePage = () => {
       const imageURL = URL.createObjectURL(file);
       setPreview(imageURL);
     }
+  };
+
+  const handleSave = () => {
+    const updatedUser = {
+      ...user,
+      picture: preview,
+    };
+
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    alert("Profile updated successfully!");
   };
 
   if (!user) {
@@ -37,7 +56,7 @@ const ProfilePage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-blue-50 relative overflow-hidden">
 
-      {/* Background blobs (same as dashboard) */}
+      {/* Background blobs */}
       <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-blue-300/20 blur-[100px] rounded-full" />
       <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-indigo-300/20 blur-[100px] rounded-full" />
 
@@ -93,24 +112,29 @@ const ProfilePage = () => {
 
             <div className="grid md:grid-cols-2 gap-4">
 
+              {/* FULL NAME (FIXED) */}
               <div>
                 <label className="text-sm text-gray-500">Full Name</label>
                 <input
-                  value={user.name || ""}
-                  readOnly
+                  value={user.name}
+                  onChange={(e) =>
+                    setUser({ ...user, name: e.target.value })
+                  }
                   className="w-full mt-1 px-3 py-2 border rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-300 outline-none"
                 />
               </div>
 
+              {/* EMAIL */}
               <div>
                 <label className="text-sm text-gray-500">Email</label>
                 <input
-                  value={user.email || ""}
+                  value={user.email}
                   readOnly
-                  className="w-full mt-1 px-3 py-2 border rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-300 outline-none"
+                  className="w-full mt-1 px-3 py-2 border rounded-lg bg-gray-50"
                 />
               </div>
 
+              {/* ROLE */}
               <div>
                 <label className="text-sm text-gray-500">Role</label>
                 <input
@@ -119,6 +143,7 @@ const ProfilePage = () => {
                 />
               </div>
 
+              {/* EXPERIENCE */}
               <div>
                 <label className="text-sm text-gray-500">Experience</label>
                 <input
@@ -131,7 +156,10 @@ const ProfilePage = () => {
 
             {/* SAVE BUTTON */}
             <div className="mt-6 flex justify-end">
-              <button className="px-6 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:scale-105 transition">
+              <button
+                onClick={handleSave}
+                className="px-6 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:scale-105 transition"
+              >
                 Save Changes
               </button>
             </div>
