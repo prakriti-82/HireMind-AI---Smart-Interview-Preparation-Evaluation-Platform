@@ -5,7 +5,10 @@ import { Toaster } from "react-hot-toast";
 import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Home/Dashboard";
 import InterviewPrep from "./pages/InterviewPrep/InterviewPrep";
+import ProfilePage from "./pages/ProfilePage";
+
 import ProtectedRoute from "./components/ProtectedRoute";
+import Layout from "./components/Layout";
 
 const App = () => {
   return (
@@ -16,24 +19,18 @@ const App = () => {
         {/* Public */}
         <Route path="/" element={<LandingPage />} />
 
-        {/* Protected */}
+        {/* Protected with shared layout */}
         <Route
-          path="/dashboard"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <Layout />
             </ProtectedRoute>
           }
-        />
-
-        <Route
-          path="/interviewprep"
-          element={
-            <ProtectedRoute>
-              <InterviewPrep />
-            </ProtectedRoute>
-          }
-        />
+        >
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/interviewprep" element={<InterviewPrep />} />
+          <Route path="/profile" element={<ProfilePage />} /> {/* ✅ FIXED */}
+        </Route>
       </Routes>
     </Router>
   );
