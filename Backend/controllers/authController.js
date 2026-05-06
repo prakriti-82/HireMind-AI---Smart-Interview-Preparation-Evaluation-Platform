@@ -2,7 +2,7 @@ import { OAuth2Client } from "google-auth-library";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 
-const client = new OAuth2Client(process.env.VITE_GOOGLE_CLIENT_ID);
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export const googleLogin = async (req, res) => {
   try {
@@ -11,7 +11,7 @@ export const googleLogin = async (req, res) => {
     // Verify token with Google
     const ticket = await client.verifyIdToken({
       idToken: credential,
-      audience: process.env.VITE_GOOGLE_CLIENT_ID,
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();
