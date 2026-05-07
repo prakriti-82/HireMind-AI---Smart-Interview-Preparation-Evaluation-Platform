@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
+    name: {
+      type: String,
+      default: "",
+    },
+
     email: {
       type: String,
       required: true,
@@ -13,11 +18,24 @@ const userSchema = new mongoose.Schema(
 
     password: {
       type: String,
-      required: true,
-      minlength: 8,
+      default: null,
     },
 
-    // ✅ FIXED: properly inside schema
+    picture: {
+      type: String,
+      default: "",
+    },
+
+    role: {
+      type: String,
+      default: "",
+    },
+
+    experience: {
+      type: String,
+      default: "",
+    },
+
     stats: {
       interviews: { type: Number, default: 0 },
       questions: { type: Number, default: 0 },

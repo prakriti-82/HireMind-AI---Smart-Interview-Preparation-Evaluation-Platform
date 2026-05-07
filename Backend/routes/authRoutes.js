@@ -2,6 +2,8 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import authMiddleware from "../middleware/authMiddleware.js";
+import { googleLogin, updateProfile } from "../controllers/authController.js";
 
 const router = express.Router();
 
@@ -9,35 +11,27 @@ const router = express.Router();
 // 🔑 Generate Tokens
 // ==============================
 const generateTokens = (user) => {
-  if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET) {
-    throw new Error("JWT secrets missing in .env");
-  }
-
   const accessToken = jwt.sign(
     { id: user._id, email: user.email },
     process.env.JWT_SECRET,
-    { expiresIn: "15m" } // short life
+    { expiresIn: "15m" }
   );
 
   const refreshToken = jwt.sign(
     { id: user._id },
     process.env.JWT_REFRESH_SECRET,
-    { expiresIn: "7d" } // long life
+    { expiresIn: "7d" }
   );
 
   return { accessToken, refreshToken };
 };
 
 // ==============================
-// ✅ REGISTER
+// REGISTER
 // ==============================
 router.post("/register", async (req, res) => {
   try {
     let { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ message: "All fields required" });
-    }
 
     email = email.toLowerCase().trim();
 
@@ -48,80 +42,65 @@ router.post("/register", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await User.create({
-      email,
-      password: hashedPassword,
-    });
+    const user = await User.create({ email, password: hashedPassword });
 
-    const { accessToken, refreshToken } = generateTokens(user);
+    const tokens = generateTokens(user);
 
-    return res.status(201).json({
+    res.json({
       success: true,
-      accessToken,
-      refreshToken,
-      user: {
-        id: user._id,
-        email: user.email,
-      },
+      ...tokens,
+      user,
     });
 
   } catch (err) {
-    console.error("REGISTER ERROR:", err);
-    return res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 });
 
 // ==============================
-// ✅ LOGIN
+// LOGIN
 // ==============================
 router.post("/login", async (req, res) => {
   try {
     let { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ message: "All fields required" });
-    }
-
     email = email.toLowerCase().trim();
 
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "User not found" });
-    }
+    if (!user) return res.status(400).json({ message: "User not found" });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    const { accessToken, refreshToken } = generateTokens(user);
+    const tokens = generateTokens(user);
 
-    return res.json({
+    res.json({
       success: true,
-      accessToken,
-      refreshToken,
-      user: {
-        id: user._id,
-        email: user.email,
-      },
+      ...tokens,
+      user,
     });
 
   } catch (err) {
-    console.error("LOGIN ERROR:", err);
-    return res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 });
 
 // ==============================
-// 🔄 REFRESH TOKEN
+// 🔥 GOOGLE LOGIN (IMPORTANT)
+// ==============================
+router.post("/google", googleLogin);
+
+// ==============================
+// 🔥 UPDATE PROFILE (THIS FIXES YOUR ERROR)
+// ==============================
+router.put("/update-profile", authMiddleware, updateProfile);
+
+// ==============================
+// REFRESH TOKEN
 // ==============================
 router.post("/refresh", (req, res) => {
   try {
     const { refreshToken } = req.body;
-
-    if (!refreshToken) {
-      return res.status(401).json({ message: "No refresh token" });
-    }
 
     const decoded = jwt.verify(
       refreshToken,
@@ -134,10 +113,10 @@ router.post("/refresh", (req, res) => {
       { expiresIn: "15m" }
     );
 
-    return res.json({ accessToken: newAccessToken });
+    res.json({ accessToken: newAccessToken });
 
   } catch (err) {
-    return res.status(403).json({ message: "Invalid refresh token" });
+    res.status(403).json({ message: "Invalid refresh token" });
   }
 });
 

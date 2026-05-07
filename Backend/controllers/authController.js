@@ -4,21 +4,21 @@ import jwt from "jsonwebtoken";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+// ==============================
+// GOOGLE LOGIN
+// ==============================
 export const googleLogin = async (req, res) => {
   try {
     const { credential } = req.body;
 
-    // Verify token with Google
     const ticket = await client.verifyIdToken({
       idToken: credential,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();
-
     const { email, name, picture } = payload;
 
-    // Check if user exists
     let user = await User.findOne({ email });
 
     if (!user) {
@@ -26,19 +26,68 @@ export const googleLogin = async (req, res) => {
         name,
         email,
         picture,
+        role: "",
+        experience: "",
       });
+    } else {
+      user.name = user.name || name;
+      user.picture = user.picture || picture;
+      await user.save();
     }
 
-    // Create JWT
-    const token = jwt.sign(
+    const accessToken = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    res.json({ token, user });
+    res.json({
+      success: true,
+      accessToken,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        picture: user.picture,
+        role: user.role,
+        experience: user.experience,
+        stats: user.stats,
+      },
+    });
 
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: "Google login failed" });
+  }
+};
+
+// ==============================
+// UPDATE PROFILE
+// ==============================
+export const updateProfile = async (req, res) => {
+  try {
+    const { name, role, experience, picture } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { name, role, experience, picture },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        picture: user.picture,
+        role: user.role,
+        experience: user.experience,
+        stats: user.stats,
+      },
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
