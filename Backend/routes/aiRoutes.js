@@ -1,9 +1,30 @@
 import express from "express";
-import { generateInterviewPrep } from "../controllers/aiController.js";
+
 import authMiddleware from "../middleware/authMiddleware.js";
+
+import {
+  startInterview,
+  evaluateAnswer,
+} from "../controllers/aiController.js";
 
 const router = express.Router();
 
-router.post("/interview-prep", authMiddleware, generateInterviewPrep);
+// =======================================
+// START INTERVIEW
+// =======================================
+router.post(
+  "/start-interview",
+  authMiddleware,
+  startInterview
+);
+
+// =======================================
+// EVALUATE ANSWER
+// =======================================
+router.post(
+  "/evaluate-answer",
+  authMiddleware,
+  evaluateAnswer
+);
 
 export default router;

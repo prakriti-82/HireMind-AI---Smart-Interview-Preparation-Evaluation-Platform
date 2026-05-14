@@ -37,3 +37,17 @@ build/
 *.njsproj
 *.sln
 *.sw?
+
+# secrets
+*.key
+*.pem
+secrets.json
+
+# coverage reports
+coverage/
+
+# Vite cache
+.vite/
+
+# npm cache
+.npm/
