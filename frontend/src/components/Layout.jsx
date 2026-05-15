@@ -1,88 +1,174 @@
 // src/components/Layout.jsx
 
-import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Brain, User, LogOut } from "lucide-react";
+import {
+  Outlet,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
+
+import {
+  LayoutDashboard,
+  Brain,
+  User,
+  LogOut,
+} from "lucide-react";
 
 const Layout = () => {
+
   const navigate = useNavigate();
+
   const location = useLocation();
 
   const handleLogout = () => {
+
     localStorage.clear();
+
     navigate("/");
   };
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) =>
+    location.pathname === path;
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
 
-      {/* SIDEBAR */}
-      <aside className="w-64 bg-white border-r p-6 hidden md:flex flex-col justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-blue-600 mb-10">
-            HireMind AI
-          </h2>
+    <div className="min-h-screen bg-gradient-to-br from-[#dbeafe] via-[#eef4ff] to-[#c7d2fe] p-4 overflow-hidden">
 
-          <nav className="space-y-2">
+      {/* MAIN LAYOUT */}
+      <div className="flex gap-4 h-[calc(100vh-32px)]">
 
-            <SidebarItem
-              icon={<LayoutDashboard size={18} />}
-              active={isActive("/dashboard")}
-              onClick={() => navigate("/dashboard")}
-            >
-              Dashboard
-            </SidebarItem>
+        {/* SIDEBAR */}
+        <aside className="w-72 bg-white/55 backdrop-blur-2xl border border-white/40 rounded-[32px] shadow-[0_8px_40px_rgba(59,130,246,0.12)] hidden md:flex flex-col justify-between p-7">
 
-            <SidebarItem
-              icon={<Brain size={18} />}
-              active={isActive("/interviewprep")}
-              onClick={() => navigate("/interviewprep")}
-            >
-              Interview Prep
-            </SidebarItem>
+          {/* TOP */}
+          <div>
 
-            <SidebarItem
-              icon={<User size={18} />}
-              active={isActive("/profile")}
-              onClick={() => navigate("/profile")}
-            >
-              Profile
-            </SidebarItem>
+            {/* LOGO */}
+            <div className="mb-12">
 
-          </nav>
-        </div>
+              <h2 className="text-4xl font-black tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
 
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 text-red-500 text-sm"
-        >
-          <LogOut size={16} />
-          Logout
-        </button>
-      </aside>
+                HireMind AI
 
-      {/* PAGE CONTENT */}
-      <main className="flex-1 p-6">
-        <Outlet />
-      </main>
+              </h2>
+
+              <p className="text-sm text-gray-500 mt-2">
+
+                AI Interview Platform
+
+              </p>
+
+            </div>
+
+            {/* NAVIGATION */}
+            <nav className="space-y-3">
+
+              <SidebarItem
+                icon={<LayoutDashboard size={20} />}
+                active={isActive("/dashboard")}
+                onClick={() =>
+                  navigate("/dashboard")
+                }
+              >
+
+                Dashboard
+
+              </SidebarItem>
+
+              <SidebarItem
+                icon={<Brain size={20} />}
+                active={isActive("/interviewprep")}
+                onClick={() =>
+                  navigate("/interviewprep")
+                }
+              >
+
+                Interview Prep
+
+              </SidebarItem>
+
+              <SidebarItem
+                icon={<User size={20} />}
+                active={isActive("/profile")}
+                onClick={() =>
+                  navigate("/profile")
+                }
+              >
+
+                Profile
+
+              </SidebarItem>
+
+            </nav>
+
+          </div>
+
+          {/* LOGOUT */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-red-50 text-red-500 hover:bg-red-100 transition-all duration-300 font-medium"
+          >
+
+            <LogOut size={18} />
+
+            Logout
+
+          </button>
+
+        </aside>
+
+        {/* PAGE CONTENT */}
+        <main className="flex-1 overflow-y-auto rounded-[32px]">
+
+          <Outlet />
+
+        </main>
+
+      </div>
+
     </div>
   );
 };
 
-/* Sidebar Item */
-const SidebarItem = ({ icon, children, active, onClick }) => {
+/* ===================================== */
+/* SIDEBAR ITEM */
+/* ===================================== */
+
+const SidebarItem = ({
+  icon,
+  children,
+  active,
+  onClick,
+}) => {
+
   return (
+
     <div
       onClick={onClick}
-      className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer text-sm ${
+      className={`group flex items-center gap-4 px-5 py-4 rounded-2xl cursor-pointer transition-all duration-300 font-medium ${
         active
-          ? "bg-blue-50 text-blue-600 font-semibold"
-          : "text-gray-600 hover:bg-gray-100"
+          ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-300/40 scale-[1.02]"
+          : "text-gray-700 hover:bg-white/70 hover:shadow-md"
       }`}
     >
-      {icon}
-      {children}
+
+      <div
+        className={`transition-all duration-300 ${
+          active
+            ? "text-white"
+            : "text-gray-500 group-hover:text-blue-600"
+        }`}
+      >
+
+        {icon}
+
+      </div>
+
+      <span className="text-[15px]">
+
+        {children}
+
+      </span>
+
     </div>
   );
 };

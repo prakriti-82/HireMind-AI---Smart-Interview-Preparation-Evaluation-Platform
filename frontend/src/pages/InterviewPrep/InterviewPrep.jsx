@@ -9,7 +9,8 @@ const InterviewPrep = () => {
   const [resume, setResume] = useState(null);
 
   const [chat, setChat] = useState([]);
-  const [currentQuestion, setCurrentQuestion] = useState(null);
+  const [currentQuestion, setCurrentQuestion] =
+    useState(null);
 
   const [answer, setAnswer] = useState("");
 
@@ -31,9 +32,11 @@ const InterviewPrep = () => {
   const startInterview = async () => {
 
     if (!jobRole && !jobDesc && !resume) {
+
       alert(
         "Provide job role, description or resume"
       );
+
       return;
     }
 
@@ -41,10 +44,14 @@ const InterviewPrep = () => {
 
       setLoading(true);
 
-      const res = await axios.post("/ai/start-interview", {
-  jobRole,
-  jobDesc,
-});
+      const res = await axios.post(
+        "/ai/start-interview",
+        {
+          jobRole,
+          jobDesc,
+        }
+      );
+
       const firstQuestion =
         res.data.question;
 
@@ -55,9 +62,11 @@ const InterviewPrep = () => {
       setChat([
         {
           type: "ai",
+
           text:
             "🚀 Interview session started successfully",
         },
+
         {
           type: "ai",
           text: firstQuestion,
@@ -123,11 +132,45 @@ const InterviewPrep = () => {
         nextQuestion,
       } = res.data;
 
+      // ======================================
+      // SAVE INTERVIEW
+      // ======================================
+      const oldInterviews = JSON.parse(
+        localStorage.getItem("interviews") || "[]"
+      );
+
+      const newInterview = {
+
+        role:
+          jobRole || "General Interview",
+
+        type:
+          "AI Mock Interview",
+
+        score,
+
+        feedback,
+
+        date:
+          new Date().toLocaleString(),
+      };
+
+      localStorage.setItem(
+        "interviews",
+
+        JSON.stringify([
+          newInterview,
+          ...oldInterviews,
+        ])
+      );
+
+      // ======================================
+      // UPDATE CHAT
+      // ======================================
       setChat((prev) => {
 
         const updated = [...prev];
 
-        // remove loading bubble
         updated.pop();
 
         return [
@@ -178,170 +221,280 @@ const InterviewPrep = () => {
 
   return (
 
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-blue-50 p-4 md:p-6">
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#dbeafe] via-[#eef4ff] to-[#c7d2fe] p-4 md:p-8">
 
-      {/* HEADER */}
-      <div className="mb-6 md:mb-8">
+      {/* BACKGROUND BLURS */}
+      <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-blue-400/30 blur-[120px] rounded-full"></div>
 
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-          Interview Preparation AI
-        </h1>
+      <div className="absolute bottom-0 right-0 w-[350px] h-[350px] bg-indigo-400/30 blur-[120px] rounded-full"></div>
 
-        <p className="text-sm md:text-base text-gray-600 mt-1">
-          Upload resume or paste job description
-          to get AI-powered interview practice
-        </p>
+      <div className="relative z-10">
 
-      </div>
+        {/* HERO HEADER */}
+        <section className="w-full mb-8">
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+          <div className="bg-white/70 backdrop-blur-2xl border border-white/40 shadow-[0_8px_40px_rgba(59,130,246,0.12)] rounded-[32px] p-8 flex flex-col md:flex-row items-center justify-between transition-all duration-300 hover:shadow-[0_8px_60px_rgba(59,130,246,0.18)]">
 
-        {/* LEFT PANEL */}
-        <div className="bg-white/80 backdrop-blur-xl shadow-xl rounded-2xl p-6">
+            <div className="space-y-4">
 
-          <h2 className="text-lg font-semibold mb-4">
-            Setup Interview
-          </h2>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
 
-          <input
-            value={jobRole}
-            onChange={(e) =>
-              setJobRole(e.target.value)
-            }
-            placeholder="Job Role (e.g. Frontend Developer)"
-            className="w-full mb-4 px-4 py-3 rounded-xl bg-gray-50 border focus:ring-2 focus:ring-blue-400"
-          />
+                ✨ AI Interview Assistant
 
-          <textarea
-            value={jobDesc}
-            onChange={(e) =>
-              setJobDesc(e.target.value)
-            }
-            placeholder="Paste Job Description"
-            className="w-full mb-4 px-4 py-3 rounded-xl bg-gray-50 border h-28"
-          />
+              </div>
 
-          {/* UPLOAD */}
-          <div className="border-2 border-dashed border-blue-300 rounded-xl p-6 text-center bg-blue-50/40 hover:bg-blue-50 transition">
+              <h1 className="text-4xl md:text-5xl font-black text-[#0f172a] leading-tight">
 
-            <input
-              type="file"
-              onChange={handleFileChange}
-              className="hidden"
-              id="resume"
-            />
+                Interview Preparation
+                <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  {" "}AI
+                </span>
 
-            <label
-              htmlFor="resume"
-              className="cursor-pointer flex flex-col items-center"
-            >
+              </h1>
 
-              <FiUploadCloud
-                size={28}
-                className="text-blue-500"
-              />
+              <p className="text-[#475569] text-lg leading-relaxed max-w-2xl">
 
-              <span className="text-sm mt-2 text-gray-600">
+                Practice realistic AI-powered mock
+                interviews with instant feedback,
+                scoring, and personalized questions.
 
-                {resume
-                  ? resume.name
-                  : "Upload Resume"}
+              </p>
 
-              </span>
+            </div>
 
-            </label>
+            <div className="text-7xl mt-8 md:mt-0 drop-shadow-lg animate-pulse">
+
+              🤖
+
+            </div>
+
           </div>
 
-          {/* START BUTTON */}
-          <button
-            onClick={startInterview}
-            disabled={loading}
-            className="w-full mt-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold shadow-md hover:scale-[1.02] transition disabled:opacity-50"
-          >
+        </section>
 
-            {loading
-              ? "Starting..."
-              : "Start Interview"}
+        {/* MAIN GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-          </button>
-        </div>
+          {/* LEFT PANEL */}
+          <div className="bg-white/45 backdrop-blur-2xl border border-white/30 shadow-[0_8px_40px_rgba(0,0,0,0.08)] rounded-[32px] p-7">
 
-        {/* RIGHT PANEL */}
-        <div className="bg-white/80 backdrop-blur-xl shadow-xl rounded-2xl p-5 flex flex-col h-[600px]">
+            <div className="flex items-center justify-between mb-6">
 
-          <h2 className="font-semibold mb-4">
-            Interview Chat
-          </h2>
+              <h2 className="text-2xl font-bold text-gray-800">
+                Setup Interview
+              </h2>
 
-          {/* CHAT */}
-          <div className="flex-1 overflow-y-auto space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white shadow-lg">
+                🚀
+              </div>
 
-            {chat.length === 0 && (
+            </div>
 
-              <div className="flex flex-col items-center justify-center h-full text-gray-400">
+            {/* ROLE */}
+            <div className="mb-5">
 
-                <p className="text-lg">
-                  🚀 Ready for your interview
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+
+                Job Role
+
+              </label>
+
+              <input
+                value={jobRole}
+                onChange={(e) =>
+                  setJobRole(e.target.value)
+                }
+                placeholder="Frontend Developer"
+                className="w-full px-5 py-4 rounded-2xl bg-white/70 border border-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-700 shadow-sm"
+              />
+
+            </div>
+
+            {/* DESCRIPTION */}
+            <div className="mb-5">
+
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+
+                Job Description
+
+              </label>
+
+              <textarea
+                value={jobDesc}
+                onChange={(e) =>
+                  setJobDesc(e.target.value)
+                }
+                placeholder="Paste required skills and responsibilities..."
+                className="w-full px-5 py-4 rounded-2xl bg-white/70 border border-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-700 h-36 resize-none shadow-sm"
+              />
+
+            </div>
+
+            {/* UPLOAD */}
+            <div className="border-2 border-dashed border-blue-300 rounded-3xl p-8 text-center bg-gradient-to-br from-blue-50/70 to-indigo-50/70 hover:scale-[1.01] transition-all duration-300">
+
+              <input
+                type="file"
+                onChange={handleFileChange}
+                className="hidden"
+                id="resume"
+              />
+
+              <label
+                htmlFor="resume"
+                className="cursor-pointer flex flex-col items-center"
+              >
+
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg">
+
+                  <FiUploadCloud
+                    size={30}
+                    className="text-white"
+                  />
+
+                </div>
+
+                <span className="text-gray-700 font-medium mt-4">
+
+                  {resume
+                    ? resume.name
+                    : "Upload Resume"}
+
+                </span>
+
+                <span className="text-sm text-gray-500 mt-1">
+
+                  PDF or DOC format
+
+                </span>
+
+              </label>
+
+            </div>
+
+            {/* BUTTON */}
+            <button
+              onClick={startInterview}
+              disabled={loading}
+              className="w-full mt-7 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 text-white font-bold text-lg shadow-xl hover:scale-[1.02] hover:shadow-2xl transition-all duration-300 disabled:opacity-50"
+            >
+
+              {loading
+                ? "Starting..."
+                : "Start Interview"}
+
+            </button>
+
+          </div>
+
+          {/* RIGHT PANEL */}
+          <div className="bg-white/45 backdrop-blur-2xl border border-white/30 shadow-[0_8px_40px_rgba(0,0,0,0.08)] rounded-[32px] p-6 flex flex-col h-[760px]">
+
+            {/* TOP */}
+            <div className="flex items-center justify-between mb-5">
+
+              <div>
+
+                <h2 className="text-2xl font-bold text-gray-800">
+                  Interview Chat
+                </h2>
+
+                <p className="text-sm text-gray-500 mt-1">
+                  Real-time AI interaction
                 </p>
 
-                <p className="text-sm mt-1">
-                  Fill details and start
-                </p>
+              </div>
+
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-r from-indigo-500 to-blue-500 flex items-center justify-center text-white shadow-lg">
+                🤖
+              </div>
+
+            </div>
+
+            {/* CHAT */}
+            <div className="flex-1 overflow-y-auto pr-2 space-y-5">
+
+              {chat.length === 0 && (
+
+                <div className="flex flex-col items-center justify-center h-full text-center">
+
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-4xl shadow-2xl mb-5">
+                    🤖
+                  </div>
+
+                  <h3 className="text-2xl font-bold text-gray-700">
+                    Ready for your interview
+                  </h3>
+
+                  <p className="text-gray-500 mt-2 max-w-sm">
+                    Fill your interview details and
+                    start practicing with AI.
+                  </p>
+
+                </div>
+              )}
+
+              {chat.map((msg, i) => (
+
+                <div
+                  key={i}
+                  className={`max-w-[85%] p-5 rounded-3xl whitespace-pre-line shadow-md transition-all duration-300 ${
+                    msg.type === "user"
+
+                      ? "ml-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-br-md"
+
+                      : "bg-white/70 backdrop-blur-lg border border-white/40 text-gray-700 rounded-bl-md"
+                  }`}
+                >
+
+                  <div className="text-sm leading-relaxed">
+
+                    {msg.loading
+                      ? "Typing..."
+                      : msg.text}
+
+                  </div>
+
+                </div>
+              ))}
+            </div>
+
+            {/* ANSWER BOX */}
+            {interviewStarted &&
+              currentQuestion && (
+
+              <div className="mt-5 pt-5 border-t border-white/30">
+
+                <textarea
+                  value={answer}
+                  onChange={(e) =>
+                    setAnswer(e.target.value)
+                  }
+                  placeholder="Type your answer here..."
+                  className="w-full p-5 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/40 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-700 resize-none h-32 shadow-sm"
+                />
+
+                <button
+                  onClick={submitAnswer}
+                  disabled={loading}
+                  className="w-full mt-4 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-xl hover:scale-[1.01] transition-all duration-300 disabled:opacity-50"
+                >
+
+                  {loading
+                    ? "Submitting..."
+                    : "Submit Answer"}
+
+                </button>
 
               </div>
             )}
 
-            {chat.map((msg, i) => (
-
-              <div
-                key={i}
-                className={`p-3 rounded-lg max-w-[80%] whitespace-pre-line ${
-                  msg.type === "user"
-                    ? "bg-blue-600 text-white ml-auto"
-                    : "bg-gray-100 text-gray-700"
-                }`}
-              >
-
-                {msg.loading
-                  ? "Typing..."
-                  : msg.text}
-
-              </div>
-            ))}
           </div>
 
-          {/* ANSWER BOX */}
-          {interviewStarted &&
-            currentQuestion && (
-
-            <div className="mt-4">
-
-              <textarea
-                value={answer}
-                onChange={(e) =>
-                  setAnswer(e.target.value)
-                }
-                placeholder="Type your answer..."
-                className="w-full p-3 border rounded-lg mb-2"
-              />
-
-              <button
-                onClick={submitAnswer}
-                disabled={loading}
-                className="w-full bg-green-600 text-white py-2 rounded-lg disabled:opacity-50"
-              >
-
-                {loading
-                  ? "Submitting..."
-                  : "Submit Answer"}
-
-              </button>
-
-            </div>
-          )}
-
         </div>
+
       </div>
+
     </div>
   );
 };
