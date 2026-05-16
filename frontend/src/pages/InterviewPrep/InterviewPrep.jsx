@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import axios from "../../utils/axiosInstance";
-import { FiUploadCloud } from "react-icons/fi";
+import {
+  FiUploadCloud,
+  FiBriefcase,
+  FiFileText,
+  FiSend,
+} from "react-icons/fi";
 
 const InterviewPrep = () => {
 
@@ -132,37 +137,7 @@ const InterviewPrep = () => {
         nextQuestion,
       } = res.data;
 
-      // ======================================
-      // SAVE INTERVIEW
-      // ======================================
-      const oldInterviews = JSON.parse(
-        localStorage.getItem("interviews") || "[]"
-      );
-
-      const newInterview = {
-
-        role:
-          jobRole || "General Interview",
-
-        type:
-          "AI Mock Interview",
-
-        score,
-
-        feedback,
-
-        date:
-          new Date().toLocaleString(),
-      };
-
-      localStorage.setItem(
-        "interviews",
-
-        JSON.stringify([
-          newInterview,
-          ...oldInterviews,
-        ])
-      );
+      
 
       // ======================================
       // UPDATE CHAT
@@ -233,11 +208,14 @@ const InterviewPrep = () => {
         {/* HERO HEADER */}
         <section className="w-full mb-8">
 
-          <div className="bg-white/70 backdrop-blur-2xl border border-white/40 shadow-[0_8px_40px_rgba(59,130,246,0.12)] rounded-[32px] p-8 flex flex-col md:flex-row items-center justify-between transition-all duration-300 hover:shadow-[0_8px_60px_rgba(59,130,246,0.18)]">
+          <div className="relative overflow-hidden bg-white/70 backdrop-blur-2xl border border-white/40 shadow-[0_8px_40px_rgba(59,130,246,0.12)] rounded-[32px] p-8 flex flex-col md:flex-row items-center justify-between transition-all duration-300 hover:shadow-[0_8px_60px_rgba(59,130,246,0.18)]">
 
-            <div className="space-y-4">
+            {/* DECORATION */}
+            <div className="absolute -top-20 -right-20 w-60 h-60 bg-blue-400/20 rounded-full blur-3xl"></div>
 
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
+            <div className="space-y-4 relative z-10">
+
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold shadow-sm">
 
                 ✨ AI Interview Assistant
 
@@ -260,9 +238,32 @@ const InterviewPrep = () => {
 
               </p>
 
+              {/* STATS */}
+              <div className="flex flex-wrap gap-4 pt-2">
+
+                <div className="px-4 py-3 rounded-2xl bg-white/70 border border-white/40 shadow-sm">
+                  <h4 className="text-xl font-black text-blue-600">
+                    24/7
+                  </h4>
+                  <p className="text-xs text-gray-500">
+                    AI Availability
+                  </p>
+                </div>
+
+                <div className="px-4 py-3 rounded-2xl bg-white/70 border border-white/40 shadow-sm">
+                  <h4 className="text-xl font-black text-indigo-600">
+                    Instant
+                  </h4>
+                  <p className="text-xs text-gray-500">
+                    Feedback
+                  </p>
+                </div>
+
+              </div>
+
             </div>
 
-            <div className="text-7xl mt-8 md:mt-0 drop-shadow-lg animate-pulse">
+            <div className="relative z-10 text-7xl mt-8 md:mt-0 drop-shadow-lg animate-pulse">
 
               🤖
 
@@ -280,11 +281,19 @@ const InterviewPrep = () => {
 
             <div className="flex items-center justify-between mb-6">
 
-              <h2 className="text-2xl font-bold text-gray-800">
-                Setup Interview
-              </h2>
+              <div>
 
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white shadow-lg">
+                <h2 className="text-2xl font-bold text-gray-800">
+                  Setup Interview
+                </h2>
+
+                <p className="text-sm text-gray-500 mt-1">
+                  Configure your AI interview
+                </p>
+
+              </div>
+
+              <div className="w-14 h-14 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white shadow-lg">
                 🚀
               </div>
 
@@ -293,7 +302,9 @@ const InterviewPrep = () => {
             {/* ROLE */}
             <div className="mb-5">
 
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+
+                <FiBriefcase />
 
                 Job Role
 
@@ -305,7 +316,7 @@ const InterviewPrep = () => {
                   setJobRole(e.target.value)
                 }
                 placeholder="Frontend Developer"
-                className="w-full px-5 py-4 rounded-2xl bg-white/70 border border-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-700 shadow-sm"
+                className="w-full px-5 py-4 rounded-2xl bg-white/70 border border-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-700 shadow-sm transition-all duration-300 focus:shadow-lg"
               />
 
             </div>
@@ -313,7 +324,9 @@ const InterviewPrep = () => {
             {/* DESCRIPTION */}
             <div className="mb-5">
 
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+
+                <FiFileText />
 
                 Job Description
 
@@ -325,13 +338,15 @@ const InterviewPrep = () => {
                   setJobDesc(e.target.value)
                 }
                 placeholder="Paste required skills and responsibilities..."
-                className="w-full px-5 py-4 rounded-2xl bg-white/70 border border-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-700 h-36 resize-none shadow-sm"
+                className="w-full px-5 py-4 rounded-2xl bg-white/70 border border-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-700 h-36 resize-none shadow-sm transition-all duration-300 focus:shadow-lg"
               />
 
             </div>
 
             {/* UPLOAD */}
-            <div className="border-2 border-dashed border-blue-300 rounded-3xl p-8 text-center bg-gradient-to-br from-blue-50/70 to-indigo-50/70 hover:scale-[1.01] transition-all duration-300">
+            <div className="relative overflow-hidden border-2 border-dashed border-blue-300 rounded-3xl p-8 text-center bg-gradient-to-br from-blue-50/70 to-indigo-50/70 hover:scale-[1.01] transition-all duration-300">
+
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-300/10 rounded-full blur-3xl"></div>
 
               <input
                 type="file"
@@ -342,7 +357,7 @@ const InterviewPrep = () => {
 
               <label
                 htmlFor="resume"
-                className="cursor-pointer flex flex-col items-center"
+                className="cursor-pointer flex flex-col items-center relative z-10"
               >
 
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg">
@@ -354,7 +369,7 @@ const InterviewPrep = () => {
 
                 </div>
 
-                <span className="text-gray-700 font-medium mt-4">
+                <span className="text-gray-700 font-semibold mt-4">
 
                   {resume
                     ? resume.name
@@ -388,10 +403,13 @@ const InterviewPrep = () => {
           </div>
 
           {/* RIGHT PANEL */}
-          <div className="bg-white/45 backdrop-blur-2xl border border-white/30 shadow-[0_8px_40px_rgba(0,0,0,0.08)] rounded-[32px] p-6 flex flex-col h-[760px]">
+          <div className="relative overflow-hidden bg-white/45 backdrop-blur-2xl border border-white/30 shadow-[0_8px_40px_rgba(0,0,0,0.08)] rounded-[32px] p-6 flex flex-col h-[760px]">
+
+            {/* GLOW */}
+            <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-indigo-400/10 rounded-full blur-3xl"></div>
 
             {/* TOP */}
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center justify-between mb-5 relative z-10">
 
               <div>
 
@@ -405,20 +423,20 @@ const InterviewPrep = () => {
 
               </div>
 
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-r from-indigo-500 to-blue-500 flex items-center justify-center text-white shadow-lg">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-indigo-500 to-blue-500 flex items-center justify-center text-white shadow-lg">
                 🤖
               </div>
 
             </div>
 
             {/* CHAT */}
-            <div className="flex-1 overflow-y-auto pr-2 space-y-5">
+            <div className="flex-1 overflow-y-auto pr-2 space-y-5 relative z-10">
 
               {chat.length === 0 && (
 
                 <div className="flex flex-col items-center justify-center h-full text-center">
 
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-4xl shadow-2xl mb-5">
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-4xl shadow-2xl mb-5 animate-pulse">
                     🤖
                   </div>
 
@@ -438,10 +456,10 @@ const InterviewPrep = () => {
 
                 <div
                   key={i}
-                  className={`max-w-[85%] p-5 rounded-3xl whitespace-pre-line shadow-md transition-all duration-300 ${
+                  className={`max-w-[85%] p-5 rounded-3xl whitespace-pre-line shadow-md transition-all duration-300 hover:scale-[1.01] ${
                     msg.type === "user"
 
-                      ? "ml-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-br-md"
+                      ? "ml-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-br-md shadow-blue-300/40"
 
                       : "bg-white/70 backdrop-blur-lg border border-white/40 text-gray-700 rounded-bl-md"
                   }`}
@@ -463,7 +481,7 @@ const InterviewPrep = () => {
             {interviewStarted &&
               currentQuestion && (
 
-              <div className="mt-5 pt-5 border-t border-white/30">
+              <div className="mt-5 pt-5 border-t border-white/30 relative z-10">
 
                 <textarea
                   value={answer}
@@ -471,14 +489,16 @@ const InterviewPrep = () => {
                     setAnswer(e.target.value)
                   }
                   placeholder="Type your answer here..."
-                  className="w-full p-5 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/40 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-700 resize-none h-32 shadow-sm"
+                  className="w-full p-5 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/40 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-700 resize-none h-32 shadow-sm transition-all duration-300 focus:shadow-lg"
                 />
 
                 <button
                   onClick={submitAnswer}
                   disabled={loading}
-                  className="w-full mt-4 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-xl hover:scale-[1.01] transition-all duration-300 disabled:opacity-50"
+                  className="w-full mt-4 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-xl hover:scale-[1.01] transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
+
+                  <FiSend />
 
                   {loading
                     ? "Submitting..."

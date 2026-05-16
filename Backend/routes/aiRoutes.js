@@ -5,6 +5,7 @@ import authMiddleware from "../middleware/authMiddleware.js";
 import {
   startInterview,
   evaluateAnswer,
+  getUserInterviews,
 } from "../controllers/aiController.js";
 
 const router = express.Router();
@@ -25,6 +26,15 @@ router.post(
   "/evaluate-answer",
   authMiddleware,
   evaluateAnswer
+);
+
+// =======================================
+// GET INTERVIEWS
+// =======================================
+router.get(
+  "/interviews",
+  authMiddleware,
+  getUserInterviews
 );
 
 export default router;

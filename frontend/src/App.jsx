@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
 import LandingPage from "./pages/LandingPage";
+import GuestPreview from "./pages/GuestPreview/GuestPreview";
 import Dashboard from "./pages/Home/Dashboard";
 import InterviewPrep from "./pages/InterviewPrep/InterviewPrep";
 import ProfilePage from "./pages/ProfilePage";
@@ -18,7 +19,7 @@ const App = () => {
       <Routes>
         {/* Public */}
         <Route path="/" element={<LandingPage />} />
-
+      <Route path="/preview" element={<GuestPreview />} />
         {/* Protected with shared layout */}
         <Route
           element={
