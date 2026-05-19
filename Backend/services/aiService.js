@@ -1,4 +1,3 @@
-
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -19,7 +18,8 @@ const groq = new Groq({
 // =======================================
 export const generateInterviewQuestion = async (
   jobRole,
-  jobDesc
+  jobDesc,
+  resumeText = ""
 ) => {
   try {
 
@@ -27,12 +27,19 @@ export const generateInterviewQuestion = async (
       Generate ONE professional interview question.
 
       Job Role:
-      ${jobRole}
+      ${jobRole || "General Role"}
 
       Job Description:
-      ${jobDesc}
+      ${jobDesc || "Not Provided"}
 
-      Keep the question concise and professional.
+      Resume Content:
+      ${resumeText || "Not Provided"}
+
+      Rules:
+      - If resume is provided, ask questions based on resume skills/projects.
+      - If job description is provided, ask role-specific questions.
+      - Keep the question concise and professional.
+      - Ask only ONE question.
     `;
 
     const response =

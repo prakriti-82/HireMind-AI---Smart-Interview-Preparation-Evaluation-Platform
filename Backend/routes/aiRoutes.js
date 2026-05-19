@@ -2,6 +2,8 @@ import express from "express";
 
 import authMiddleware from "../middleware/authMiddleware.js";
 
+import upload from "../middleware/uploadMiddleware.js";
+
 import {
   startInterview,
   evaluateAnswer,
@@ -16,6 +18,7 @@ const router = express.Router();
 router.post(
   "/start-interview",
   authMiddleware,
+  upload.single("resume"),
   startInterview
 );
 

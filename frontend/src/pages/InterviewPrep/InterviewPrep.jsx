@@ -34,58 +34,92 @@ const InterviewPrep = () => {
   // ======================================
   // START INTERVIEW
   // ======================================
-  const startInterview = async () => {
+ const startInterview = async () => {
 
-    if (!jobRole && !jobDesc && !resume) {
+  if (!jobRole && !jobDesc && !resume) {
 
-      alert(
-        "Provide job role, description or resume"
+    alert(
+      "Provide job role, description or resume"
+    );
+
+    return;
+  }
+
+  try {
+
+    setLoading(true);
+
+    // ======================================
+    // FORM DATA
+    // ======================================
+    const formData = new FormData();
+
+    formData.append(
+      "jobRole",
+      jobRole
+    );
+
+    formData.append(
+      "jobDesc",
+      jobDesc
+    );
+
+    // ======================================
+    // APPEND RESUME
+    // ======================================
+    if (resume) {
+
+      formData.append(
+        "resume",
+        resume
       );
-
-      return;
     }
 
-    try {
-
-      setLoading(true);
-
-      const res = await axios.post(
-        "/ai/start-interview",
-        {
-          jobRole,
-          jobDesc,
-        }
-      );
-
-      const firstQuestion =
-        res.data.question;
-
-      setInterviewStarted(true);
-
-      setCurrentQuestion(firstQuestion);
-
-      setChat([
-        {
-          type: "ai",
-
-          text:
-            "🚀 Interview session started successfully",
+    // ======================================
+    // API CALL
+    // ======================================
+    const res = await axios.post(
+      "/ai/start-interview",
+      formData,
+      {
+        headers: {
+          "Content-Type":
+            "multipart/form-data",
         },
+      }
+    );
 
-        {
-          type: "ai",
-          text: firstQuestion,
-        },
-      ]);
+    const firstQuestion =
+      res.data.question;
 
-    } catch (err) {
+    setInterviewStarted(true);
 
-      console.error(err);
+    setCurrentQuestion(
+      firstQuestion
+    );
 
-      alert(
-        err.response?.data?.message ||
-        "Failed to start interview"
-      );
+    setChat([
+      {
+        type: "ai",
+
+        text:
+          "🚀 Interview session started successfully",
+      },
+
+      {
+        type: "ai",
+        text: firstQuestion,
+      },
+    ]);
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert(
+      err.response?.data?.message ||
+      "Failed to start interview"
+    );
 
     } finally {
 
@@ -127,7 +161,10 @@ const InterviewPrep = () => {
         "/ai/evaluate-answer",
         {
           question: currentQuestion,
+
           answer: userAnswer,
+
+          jobRole,
         }
       );
 
@@ -136,8 +173,6 @@ const InterviewPrep = () => {
         score,
         nextQuestion,
       } = res.data;
-
-      
 
       // ======================================
       // UPDATE CHAT
@@ -263,7 +298,7 @@ const InterviewPrep = () => {
 
             </div>
 
-            <div className="relative z-10 text-7xl mt-8 md:mt-0 drop-shadow-lg animate-pulse">
+            <div className="relative z-10 text-7xl mt-8 md:mt-0 drop-shadow-lg animate-bounce">
 
               🤖
 
@@ -350,6 +385,7 @@ const InterviewPrep = () => {
 
               <input
                 type="file"
+                accept=".pdf"
                 onChange={handleFileChange}
                 className="hidden"
                 id="resume"
