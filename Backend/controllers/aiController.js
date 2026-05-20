@@ -4,8 +4,7 @@ import {
 } from "../services/aiService.js";
 
 import Interview from "../models/Interview.js";
-
-import pdfParse from "pdf-parse";
+import { PdfReader } from "pdfreader";
 
 // =======================================
 // START INTERVIEW
@@ -20,13 +19,35 @@ export const startInterview = async (req, res) => {
     // =======================================
     // READ RESUME PDF
     // =======================================
-    if (req.file) {
+   if (req.file) {
 
-      const parsedResume =
-        await pdfParse(req.file.buffer);
+  resumeText = await new Promise(
+    (resolve, reject) => {
 
-      resumeText = parsedResume.text;
+      let text = "";
+
+      new PdfReader().parseBuffer(
+        req.file.buffer,
+
+        (err, item) => {
+
+          if (err) {
+
+            reject(err);
+
+          } else if (!item) {
+
+            resolve(text);
+
+          } else if (item.text) {
+
+            text += item.text + " ";
+          }
+        }
+      );
     }
+  );
+}
 
     // =======================================
     // VALIDATION

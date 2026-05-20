@@ -204,7 +204,12 @@ const InterviewPrep = () => {
         ];
       });
 
-      setCurrentQuestion(nextQuestion);
+    if (nextQuestion) {
+  setCurrentQuestion(nextQuestion);
+} else {
+  setCurrentQuestion(null);
+  setInterviewStarted(false);
+}
 
     } catch (err) {
 

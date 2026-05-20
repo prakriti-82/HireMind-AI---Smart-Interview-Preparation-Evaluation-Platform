@@ -26,14 +26,20 @@ const LandingPage = () => {
     // =====================================
     // AUTO OPEN LOGIN MODAL
     // =====================================
-    useEffect(() => {
+ useEffect(() => {
 
-        if (location.state?.openAuth) {
+    if (location.state?.openAuth) {
 
-            setOpenAuthModal(true);
-        }
+        setOpenAuthModal(true);
 
-    }, [location]);
+        // CLEAR STATE AFTER OPENING
+        navigate(location.pathname, {
+            replace: true,
+            state: {},
+        });
+    }
+
+}, [location, navigate]);
 
     // =====================================
     // CTA BUTTON
