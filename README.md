@@ -201,16 +201,22 @@ npm install
 npm run dev
 
 **Environment Variables**
-Backend .env
-MONGO_URI=your_mongodb_connection
-JWT_SECRET=your_jwt_secret
-JWT_REFRESH_SECRET=your_refresh_secret
-GROQ_API_KEY=your_groq_key
-GOOGLE_CLIENT_ID=your_google_client_id
-CLIENT_URL=http://localhost:5173
-Frontend .env
-VITE_API_URL=http://localhost:5000/api
-VITE_GOOGLE_CLIENT_ID=your_google_client_id
+**🖥️Backend .env**
+| Variable Name      | Description                  | Example                                        |
+| ------------------ | ---------------------------- | ---------------------------------------------- |
+| MONGO_URI          | MongoDB connection string    | your_mongodb_connection                        |
+| JWT_SECRET         | Secret key for access token  | your_jwt_secret                                |
+| JWT_REFRESH_SECRET | Secret key for refresh token | your_refresh_secret                            |
+| GROQ_API_KEY       | API key for Groq AI          | your_groq_key                                  |
+| GOOGLE_CLIENT_ID   | Google OAuth client ID       | your_google_client_id                          |
+| CLIENT_URL         | Frontend URL                 | [http://localhost:5173](http://localhost:5173) |
+
+**🌐Frontend .env**
+| Variable Name         | Description            | Example                                                |
+| --------------------- | ---------------------- | ------------------------------------------------------ |
+| VITE_API_URL          | Backend API base URL   | [http://localhost:5000/api](http://localhost:5000/api) |
+| VITE_GOOGLE_CLIENT_ID | Google OAuth client ID | your_google_client_id                                  |
+
 
 **📡 API Reference**
 **🔐 Authentication Routes**
