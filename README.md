@@ -183,23 +183,24 @@ Smooth and responsive user experience
 - main.jsx → entry point
 
 
-**Getting Started**
-Prerequisites
+**🚀 Getting Started**
+📌 Prerequisites
+Before running this project, make sure you have:
 Node.js v18+
-MongoDB Atlas
+MongoDB Atlas account
 Groq API Key
 Google OAuth credentials
-Installation
-cd hiremind-ai
-Backend
+
+**Backend**
 cd backend
 npm install
 npm run dev
-Frontend
+**Frontend**
 cd frontend
 npm install
 npm run dev
-Environment Variables
+
+**Environment Variables**
 Backend .env
 MONGO_URI=your_mongodb_connection
 JWT_SECRET=your_jwt_secret
@@ -211,19 +212,28 @@ Frontend .env
 VITE_API_URL=http://localhost:5000/api
 VITE_GOOGLE_CLIENT_ID=your_google_client_id
 
-**API Reference**
-Auth
-POST /api/auth/register
-POST /api/auth/login
-POST /api/auth/google
-POST /api/auth/refresh
-POST /api/auth/logout
-**AI**
-POST /api/ai/start-interview
-POST /api/ai/evaluate-answer
-**Interviews**
-GET /api/interviews
-GET /api/interviews/:id
+**📡 API Reference**
+**🔐 Authentication Routes**
+| Method | Endpoint             | Description       |
+| ------ | -------------------- | ----------------- |
+| POST   | `/api/auth/register` | Register new user |
+| POST   | `/api/auth/login`    | Login user        |
+| POST   | `/api/auth/google`   | Google login      |
+| POST   | `/api/auth/refresh`  | Refresh token     |
+| POST   | `/api/auth/logout`   | Logout user       |
+
+**🤖 AI Routes**
+| Method | Endpoint                  | Description        |
+| ------ | ------------------------- | ------------------ |
+| POST   | `/api/ai/start-interview` | Start AI interview |
+| POST   | `/api/ai/evaluate-answer` | Evaluate answer    |
+
+**📊 Interview Routes**
+| Method | Endpoint              | Description         |
+| ------ | --------------------- | ------------------- |
+| GET    | `/api/interviews`     | Get all interviews  |
+| GET    | `/api/interviews/:id` | Get interview by ID |
+
 
 **Security Implementation**
 JWT authentication with refresh rotation
@@ -253,8 +263,8 @@ Author
 
 **Team Members**
 
-Prakriti Kumari
-Kumari Shivani Mahato
+Prakriti Kumari,
+Kumari Shivani Mahato,
 Pragati Kumari
 
 Final Year Project — BCA (2023–2026)
