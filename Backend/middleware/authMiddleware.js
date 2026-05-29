@@ -1,93 +1,115 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import jwt from "jsonwebtoken";
+
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET missing in environment variables");
+}
+
+const tokenCache = new Map();
+
+// Cache cleanup every 10 minutes
+setInterval(() => {
+  const now = Date.now();
+
+  for (const [key, value] of tokenCache.entries()) {
+    if (now >= value.expiresAt) {
+      tokenCache.delete(key);
+    }
+  }
+}, 10 * 60 * 1000);
 
 const authMiddleware = (req, res, next) => {
   try {
-
     const authHeader = req.headers.authorization;
 
-    // ❌ No token provided
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-
+    if (!authHeader?.startsWith("Bearer ")) {
       return res.status(401).json({
         success: false,
         message: "Access denied. No token provided.",
       });
     }
 
-    // ✅ Extract token
     const token = authHeader.split(" ")[1];
 
-    // ❌ Empty token edge case
     if (!token) {
-
       return res.status(401).json({
         success: false,
         message: "Token missing.",
       });
     }
 
-    // ❌ JWT secret missing
-    if (!process.env.JWT_SECRET) {
+    // =======================================
+    // CHECK CACHE
+    // =======================================
+    const cached = tokenCache.get(token);
 
-      console.error("JWT_SECRET is missing");
-
-      return res.status(500).json({
-        success: false,
-        message: "Server configuration error",
-      });
+    if (cached && Date.now() < cached.expiresAt) {
+      req.user = cached.user;
+      return next();
     }
 
-    // ✅ Verify token
+    // =======================================
+    // VERIFY TOKEN
+    // =======================================
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET
     );
 
-    // ❌ Invalid payload
     if (!decoded?.id) {
-
       return res.status(401).json({
         success: false,
-        message: "Invalid token payload",
+        message: "Invalid token payload.",
       });
     }
 
-    // ✅ Attach user info
-    req.user = {
+    const userData = {
       id: decoded.id,
+      email: decoded.email || null,
+      role: decoded.role || "user",
     };
+
+    // =======================================
+    // SAVE TO CACHE
+    // =======================================
+    tokenCache.set(token, {
+      user: userData,
+      expiresAt: Date.now() + 5 * 60 * 1000,
+    });
+
+    req.user = userData;
 
     next();
 
   } catch (error) {
 
-    console.error(
-      "Auth Middleware Error:",
-      error.message
-    );
+    const token =
+      req.headers.authorization?.split(" ")[1];
 
-    // ❌ Token expired
+    if (token) {
+      tokenCache.delete(token);
+    }
+
     if (error.name === "TokenExpiredError") {
-
       return res.status(401).json({
         success: false,
-        message: "Session expired. Please login again.",
+        message:
+          "Session expired. Please login again.",
       });
     }
 
-    // ❌ Invalid token
     if (error.name === "JsonWebTokenError") {
-
       return res.status(401).json({
         success: false,
-        message: "Invalid token",
+        message: "Invalid token.",
       });
     }
 
-    // ❌ Generic fallback
     return res.status(500).json({
       success: false,
-      message: "Authentication failed",
+      message: "Authentication failed.",
     });
   }
 };

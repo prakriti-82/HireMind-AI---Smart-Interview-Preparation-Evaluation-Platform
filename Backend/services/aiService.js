@@ -1,207 +1,352 @@
-import dotenv from "dotenv";
-dotenv.config();
-
 import Groq from "groq-sdk";
 
 import { mockQuestions } from "../data/mockQuestions.js";
-import { mockFeedbacks } from "../data/mockFeedback.js";
 
-// =======================================
-// GROQ CLIENT
-// =======================================
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
 // =======================================
-// START INTERVIEW
+// FAST + CHEAP MODEL
 // =======================================
-export const generateInterviewQuestion = async (
-  jobRole,
-  jobDesc,
-  resumeText = ""
-) => {
-  try {
+const MODEL =
+  "llama-3.1-8b-instant";
 
-    const prompt = `
-      Generate ONE professional interview question.
+// =======================================
+// SAFE GROQ CALL
+// =======================================
+const groqCall = (messages) =>
+  Promise.race([
+    groq.chat.completions.create({
+      messages,
 
-      Job Role:
-      ${jobRole || "General Role"}
+      model: MODEL,
 
-      Job Description:
-      ${jobDesc || "Not Provided"}
+      response_format: {
+        type: "json_object",
+      },
 
-      Resume Content:
-      ${resumeText || "Not Provided"}
+      temperature: 0.7,
 
-      Rules:
-      - If resume is provided, ask questions based on resume skills/projects.
-      - If job description is provided, ask role-specific questions.
-      - Keep the question concise and professional.
-      - Ask only ONE question.
-    `;
+      max_tokens: 700,
+    }),
 
-    const response =
-      await groq.chat.completions.create({
-        messages: [
+    new Promise((_, reject) =>
+      setTimeout(
+        () =>
+          reject(
+            new Error("Groq timeout")
+          ),
+        10000
+      )
+    ),
+  ]);
+
+// =======================================
+// INTERVIEW PERSONALITIES
+// =======================================
+const personalityPrompts = {
+  friendly:
+    "You are a supportive and encouraging interviewer.",
+
+  strict:
+    "You are a strict FAANG interviewer who expects concise and technically accurate answers.",
+
+  challenging:
+    "You are a challenging senior engineer interviewer who asks deep follow-up questions.",
+
+  "google-style":
+    "You are a Google interviewer focused on problem solving, clarity, structured thinking, and communication.",
+};
+
+// =======================================
+// DIFFICULTY RULES
+// =======================================
+const difficultyInstructions = {
+  easy:
+    "Ask beginner-friendly interview questions.",
+
+  medium:
+    "Ask intermediate-level industry interview questions.",
+
+  hard:
+    "Ask advanced FAANG-level technical questions.",
+};
+
+// =======================================
+// GENERATE QUESTION
+// =======================================
+export const generateInterviewQuestion =
+  async (
+    jobRole,
+    jobDesc,
+    resumeText = "",
+    options = {}
+  ) => {
+
+    try {
+
+      const {
+        difficulty = "medium",
+
+        personality =
+          "friendly",
+
+        round =
+          "technical",
+
+        previousQuestions = [],
+      } = options;
+
+      const prompt = `
+Generate ONE realistic ${round} interview question.
+
+IMPORTANT:
+- Return ONLY valid JSON
+- Avoid repeating previous questions
+- Make the question natural and human-like
+
+JSON FORMAT:
+{
+  "question": "<question>"
+}
+
+INTERVIEWER PERSONALITY:
+${
+  personalityPrompts[
+    personality
+  ]
+}
+
+DIFFICULTY:
+${
+  difficultyInstructions[
+    difficulty
+  ]
+}
+
+ROLE:
+${jobRole || "General Role"}
+
+JOB DESCRIPTION:
+${(
+  jobDesc || ""
+).slice(0, 1000)}
+
+RESUME:
+${(
+  resumeText || ""
+).slice(0, 1000)}
+
+PREVIOUS QUESTIONS:
+${previousQuestions.join("\n")}
+`;
+
+      const response =
+        await groqCall([
           {
             role: "user",
+
             content: prompt,
           },
-        ],
+        ]);
 
-        model: "llama-3.3-70b-versatile",
-      });
+      const text =
+        response.choices[0]
+          .message.content;
 
-    return response.choices[0].message.content;
+      const parsed = JSON.parse(
+        text
+          .replace(
+            /```json|```/g,
+            ""
+          )
+          .trim()
+      );
 
-  } catch (error) {
+      return (
+        parsed.question ||
+        mockQuestions[
+          Math.floor(
+            Math.random() *
+              mockQuestions.length
+          )
+        ]
+      );
 
-    console.log(
-      "Groq Failed → Using Mock Question"
-    );
+    } catch (error) {
 
-    return mockQuestions[
-      Math.floor(
-        Math.random() * mockQuestions.length
-      )
-    ];
-  }
-};
+      console.error(
+        "Groq generateQuestion failed:",
+        error.message
+      );
+
+      return mockQuestions[
+        Math.floor(
+          Math.random() *
+            mockQuestions.length
+        )
+      ];
+    }
+  };
 
 // =======================================
 // EVALUATE ANSWER
 // =======================================
-export const evaluateInterviewAnswer = async (
-  question,
-  answer
-) => {
-  try {
+export const evaluateInterviewAnswer =
+  async (
+    question,
+    answer,
+    questionCount,
+    options = {}
+  ) => {
 
-    const prompt = `
-      Interview Question:
-      ${question}
+    try {
 
-      Candidate Answer:
-      ${answer}
+      const {
+        difficulty = "medium",
 
-      Evaluate the answer professionally.
+        personality =
+          "friendly",
 
-      Give:
-      1. Score out of 10
-      2. Short feedback
-      3. Next interview question
+        round =
+          "technical",
+      } = options;
 
-      Response format:
+      const isLast =
+        questionCount >= 5;
 
-      Score: X
-      Feedback: ...
-      Next Question: ...
-    `;
+      const prompt = `
+You are conducting a professional ${round} interview.
 
-    const response =
-      await groq.chat.completions.create({
-        messages: [
+Evaluate the candidate answer realistically.
+
+IMPORTANT:
+- Return ONLY JSON
+- Give concise feedback
+- Score from 1-10
+- Ask stronger follow-up questions if answer is good
+- Ask simpler questions if answer is weak
+
+JSON FORMAT:
+${
+  isLast
+
+    ? `
+{
+  "score": 8,
+  "feedback": "<feedback>",
+  "nextQuestion": null
+}
+`
+
+    : `
+{
+  "score": 8,
+  "feedback": "<feedback>",
+  "nextQuestion": "<question>"
+}
+`
+}
+
+INTERVIEWER:
+${
+  personalityPrompts[
+    personality
+  ]
+}
+
+DIFFICULTY:
+${
+  difficultyInstructions[
+    difficulty
+  ]
+}
+
+QUESTION:
+${question}
+
+ANSWER:
+${answer.slice(0, 3000)}
+
+QUESTION NUMBER:
+${questionCount} of 5
+`;
+
+      const response =
+        await groqCall([
           {
             role: "user",
+
             content: prompt,
           },
-        ],
+        ]);
 
-        model: "llama-3.3-70b-versatile",
-      });
+      const text =
+        response.choices[0]
+          .message.content;
 
-    const text =
-      response.choices[0].message.content;
-
-    // =======================================
-    // EXTRACT SCORE
-    // =======================================
-    const scoreMatch =
-      text.match(/Score:\s*(\d+)/i);
-
-    // =======================================
-    // EXTRACT FEEDBACK
-    // =======================================
-    const feedbackMatch =
-      text.match(
-        /Feedback:\s*([\s\S]*?)Next Question:/i
+      const result = JSON.parse(
+        text
+          .replace(
+            /```json|```/g,
+            ""
+          )
+          .trim()
       );
 
-    // =======================================
-    // EXTRACT NEXT QUESTION
-    // =======================================
-    const nextQuestionMatch =
-      text.match(
-        /Next Question:\s*([\s\S]*)/i
+      return {
+
+        score: Math.min(
+          10,
+
+          Math.max(
+            0,
+
+            Number(
+              result.score
+            ) || 7
+          )
+        ),
+
+        feedback:
+          result.feedback ||
+          "Good answer.",
+
+        nextQuestion: isLast
+          ? null
+          : result.nextQuestion ||
+            null,
+      };
+
+    } catch (error) {
+
+      console.error(
+        "Groq evaluateAnswer failed:",
+        error.message
       );
 
-    // =======================================
-    // RANDOMLY END INTERVIEW
-    // =======================================
-    const shouldEndInterview =
-      Math.random() > 0.7;
+      return {
 
-    return {
+        score:
+          Math.floor(
+            Math.random() * 4
+          ) + 6,
 
-      score: scoreMatch
-        ? Number(scoreMatch[1])
-        : 7,
+        feedback:
+          "Good attempt. Improve clarity, communication, and technical depth.",
 
-      feedback: feedbackMatch
-        ? feedbackMatch[1].trim()
-        : "Good attempt.",
+        nextQuestion:
+          questionCount >= 5
 
-      nextQuestion: shouldEndInterview
-        ? null
-        : nextQuestionMatch
-          ? nextQuestionMatch[1].trim()
-          : mockQuestions[
-              Math.floor(
-                Math.random() *
-                mockQuestions.length
-              )
-            ],
-    };
+            ? null
 
-  } catch (error) {
-
-    console.log(
-      "Groq Failed → Using Mock Feedback"
-    );
-
-    const randomFeedback =
-      mockFeedbacks[
-        Math.floor(
-          Math.random() *
-          mockFeedbacks.length
-        )
-      ];
-
-    const randomQuestion =
-      mockQuestions[
-        Math.floor(
-          Math.random() *
-          mockQuestions.length
-        )
-      ];
-
-    // =======================================
-    // RANDOMLY END INTERVIEW
-    // =======================================
-    const shouldEndInterview =
-      Math.random() > 0.7;
-
-    return {
-
-      score: randomFeedback.score,
-
-      feedback: randomFeedback.feedback,
-
-      nextQuestion: shouldEndInterview
-        ? null
-        : randomQuestion,
-    };
-  }
-};
+            : mockQuestions[
+                Math.floor(
+                  Math.random() *
+                    mockQuestions.length
+                )
+              ],
+      };
+    }
+  };

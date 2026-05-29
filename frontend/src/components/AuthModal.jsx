@@ -44,7 +44,6 @@ const AuthModal = ({ isOpen, onClose }) => {
   // RESET FORM
   // =====================================
   const resetForm = () => {
-
     setEmail("");
     setPassword("");
     setError("");
@@ -55,171 +54,104 @@ const AuthModal = ({ isOpen, onClose }) => {
   // CLOSE MODAL
   // =====================================
   const handleClose = () => {
-
     resetForm();
-
     onClose();
   };
 
   // =====================================
-  // ESC KEY CLOSE
+  // ESC KEY CLOSE — fixed dependency
   // =====================================
   useEffect(() => {
-
+    if (!isOpen) return;
     const handleEsc = (e) => {
-
-      if (e.key === "Escape") {
-
-        handleClose();
-      }
+      if (e.key === "Escape") handleClose();
     };
-
-    window.addEventListener(
-      "keydown",
-      handleEsc
-    );
-
-    return () =>
-      window.removeEventListener(
-        "keydown",
-        handleEsc
-      );
-
-  }, []);
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [isOpen]);
 
   // =====================================
   // DISABLE BODY SCROLL
   // =====================================
   useEffect(() => {
-
     if (isOpen) {
-
-      document.body.style.overflow =
-        "hidden";
-
+      document.body.style.overflow = "hidden";
     } else {
-
-      document.body.style.overflow =
-        "auto";
+      document.body.style.overflow = "auto";
     }
-
     return () => {
-
-      document.body.style.overflow =
-        "auto";
+      document.body.style.overflow = "auto";
     };
-
   }, [isOpen]);
 
   // =====================================
   // OUTSIDE CLICK CLOSE
   // =====================================
   const handleOutsideClick = (e) => {
-
     if (
       modalRef.current &&
       !modalRef.current.contains(e.target)
     ) {
-
       handleClose();
     }
   };
 
   // =====================================
-  // FORM SUBMIT
+  // FORM SUBMIT — save refreshToken + validation
   // =====================================
   const handleSubmit = async (e) => {
-
     e.preventDefault();
-
     setError("");
+
+    if (!isLogin && password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
 
     setLoading(true);
 
     try {
+      const url = isLogin ? "/auth/login" : "/auth/register";
+      const res = await axios.post(url, { email, password });
 
-      const url = isLogin
-        ? "/auth/login"
-        : "/auth/register";
-
-      const res = await axios.post(
-        url,
-        {
-          email,
-          password,
-        }
-      );
-
-      localStorage.setItem(
-        "accessToken",
-        res.data.accessToken
-      );
-
-      localStorage.setItem(
-        "user",
-        JSON.stringify(res.data.user)
-      );
+      localStorage.setItem("accessToken",  res.data.accessToken);
+      localStorage.setItem("refreshToken", res.data.refreshToken); // ✅ added
+      localStorage.setItem("user",         JSON.stringify(res.data.user));
 
       handleClose();
-
       navigate("/dashboard");
 
     } catch (err) {
-
-      setError(
-        err.response?.data?.message ||
-        "Something went wrong"
-      );
-
+      setError(err.response?.data?.message || "Something went wrong.");
     } finally {
-
       setLoading(false);
     }
   };
 
   // =====================================
-  // GOOGLE LOGIN
+  // GOOGLE LOGIN — save refreshToken
   // =====================================
-  const handleGoogleSuccess =
-    async (credentialResponse) => {
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      setLoading(true);
 
-      try {
+      const res = await axios.post("/auth/google", {
+        credential: credentialResponse.credential,
+      });
 
-        setLoading(true);
+      localStorage.setItem("accessToken",  res.data.accessToken);
+      localStorage.setItem("refreshToken", res.data.refreshToken); // ✅ added
+      localStorage.setItem("user",         JSON.stringify(res.data.user));
 
-        const res = await axios.post(
-          "/auth/google",
-          {
-            credential:
-              credentialResponse.credential,
-          }
-        );
+      handleClose();
+      navigate("/dashboard");
 
-        localStorage.setItem(
-          "accessToken",
-          res.data.accessToken
-        );
-
-        localStorage.setItem(
-          "user",
-          JSON.stringify(res.data.user)
-        );
-
-        handleClose();
-
-        navigate("/dashboard");
-
-      } catch (error) {
-
-        setError(
-          "Google login failed"
-        );
-
-      } finally {
-
-        setLoading(false);
-      }
-    };
+    } catch (error) {
+      setError("Google login failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -243,9 +175,7 @@ const AuthModal = ({ isOpen, onClose }) => {
           onClick={handleClose}
           className="absolute top-5 right-5 z-20 text-gray-500 hover:text-black transition-all"
         >
-
           <AiOutlineClose size={24} />
-
         </button>
 
         <div className="relative z-10 p-8">
@@ -254,135 +184,78 @@ const AuthModal = ({ isOpen, onClose }) => {
           <div className="text-center mb-6">
 
             <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold mb-4">
-
               🚀 HireMind AI
-
             </div>
 
             <h2 className="text-3xl font-black text-[#0f172a]">
-
-              {isLogin
-                ? "Welcome Back"
-                : "Create Account"}
-
+              {isLogin ? "Welcome Back" : "Create Account"}
             </h2>
 
             <p className="text-[#64748b] mt-2">
-
               {isLogin
                 ? "Login to continue your AI interview journey"
                 : "Start practicing AI interviews today"}
-
             </p>
 
           </div>
 
           {/* GOOGLE LOGIN */}
           <div className="flex justify-center">
-
             <GoogleLogin
-              onSuccess={
-                handleGoogleSuccess
-              }
-              onError={() =>
-                setError(
-                  "Google Login Failed"
-                )
-              }
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError("Google Login Failed")}
             />
-
           </div>
 
           {/* DIVIDER */}
           <div className="flex items-center gap-3 my-6">
-
             <div className="flex-1 h-[1px] bg-gray-200"></div>
-
-            <span className="text-sm text-gray-400">
-
-              OR
-
-            </span>
-
+            <span className="text-sm text-gray-400">OR</span>
             <div className="flex-1 h-[1px] bg-gray-200"></div>
-
           </div>
 
           {/* FORM */}
           <form
             onSubmit={handleSubmit}
             className="space-y-5"
-            autoComplete="off"
           >
 
             {/* EMAIL */}
             <div>
-
               <input
                 type="email"
                 placeholder="Enter email"
-                autoComplete="off"
                 value={email}
-                onChange={(e) =>
-                  setEmail(
-                    e.target.value
-                  )
-                }
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full rounded-2xl border border-gray-200 bg-white/70 px-5 py-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
                 required
               />
-
             </div>
 
             {/* PASSWORD */}
             <div className="relative">
-
               <input
-                type={
-                  showPassword
-                    ? "text"
-                    : "password"
-                }
+                type={showPassword ? "text" : "password"}
                 placeholder="Enter password"
-                autoComplete="new-password"
                 value={password}
-                onChange={(e) =>
-                  setPassword(
-                    e.target.value
-                  )
-                }
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full rounded-2xl border border-gray-200 bg-white/70 px-5 py-4 pr-14 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
                 required
               />
 
               <button
                 type="button"
-                onClick={() =>
-                  setShowPassword(
-                    !showPassword
-                  )
-                }
+                onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
               >
-
-                {showPassword ? (
-                  <AiOutlineEye />
-                ) : (
-                  <AiOutlineEyeInvisible />
-                )}
-
+                {/* ✅ Fixed — shows eye when hidden, eye-invisible when visible */}
+                {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
               </button>
-
             </div>
 
             {/* ERROR */}
             {error && (
-
-              <p className="text-red-500 text-sm font-medium">
-
-                {error}
-
-              </p>
+              <p className="text-red-500 text-sm font-medium">{error}</p>
             )}
 
             {/* SUBMIT */}
@@ -390,38 +263,28 @@ const AuthModal = ({ isOpen, onClose }) => {
               disabled={loading}
               className="w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 py-4 text-white font-bold shadow-[0_10px_30px_rgba(59,130,246,0.30)] hover:scale-[1.02] transition-all duration-300 disabled:opacity-70"
             >
-
               {loading
                 ? "Please wait..."
                 : isLogin
                 ? "Login"
                 : "Create Account"}
-
             </button>
 
           </form>
 
           {/* TOGGLE */}
           <div className="mt-6 text-center">
-
             <button
               onClick={() => {
-
-                setIsLogin(
-                  !isLogin
-                );
-
+                setIsLogin(!isLogin);
                 setError("");
               }}
               className="text-blue-600 font-semibold hover:underline"
             >
-
               {isLogin
                 ? "Create a new account"
                 : "Already have an account?"}
-
             </button>
-
           </div>
 
         </div>

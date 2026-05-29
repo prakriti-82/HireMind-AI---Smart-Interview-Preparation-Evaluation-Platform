@@ -13,33 +13,124 @@ dotenv.config();
 
 const app = express();
 
-// ✅ Middlewares
-app.use(cors());
-app.use(express.json());
+// =======================================
+// MIDDLEWARES
+// =======================================
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || "*",
+    credentials: true,
+  })
+);
 
-// ✅ UPLOADS FOLDER ACCESS
+app.use(express.json({ limit: "5mb" }));
+
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: "5mb",
+  })
+);
+
+// =======================================
+// STATIC FILES
+// =======================================
 app.use(
   "/uploads",
   express.static(path.join("uploads"))
 );
 
-// ✅ Routes
+// =======================================
+// API ROUTES
+// =======================================
 app.use("/api/auth", authRoutes);
-app.use("/api/ai", aiRoutes);
-app.use("/api/user", userRoutes);
-app.use("/api/interviews", interviewRoutes);
 
-// ✅ DB Connection
+app.use("/api/ai", aiRoutes);
+
+app.use("/api/user", userRoutes);
+
+app.use(
+  "/api/interviews",
+  interviewRoutes
+);
+
+// =======================================
+// HEALTH CHECK
+// =======================================
+app.get("/", (req, res) => {
+
+  res.status(200).json({
+    success: true,
+
+    message:
+      "🚀 HireMind AI Backend Running",
+
+    environment:
+      process.env.NODE_ENV || "development",
+
+    timestamp: new Date(),
+  });
+});
+
+// =======================================
+// 404 HANDLER
+// =======================================
+app.use((req, res) => {
+
+  res.status(404).json({
+    success: false,
+
+    message: "API Route Not Found",
+  });
+});
+
+// =======================================
+// GLOBAL ERROR HANDLER
+// =======================================
+app.use(
+  (err, req, res, next) => {
+
+    console.error(
+      "Global Server Error:",
+      err
+    );
+
+    return res.status(500).json({
+      success: false,
+
+      message:
+        "Internal Server Error",
+    });
+  }
+);
+
+// =======================================
+// DATABASE CONNECTION
+// =======================================
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() =>
-    console.log("MongoDB Connected")
-  )
-  .catch((err) => console.log(err));
 
-// ✅ Server
-app.listen(5000, () => {
-  console.log(
-    "Server running on port 5000"
-  );
-});
+  .then(() => {
+
+    console.log(
+      "✅ MongoDB Connected"
+    );
+
+    const PORT =
+      process.env.PORT || 5000;
+
+    app.listen(PORT, () => {
+
+      console.log(
+        `🚀 Server running on port ${PORT}`
+      );
+    });
+  })
+
+  .catch((err) => {
+
+    console.error(
+      "❌ MongoDB Connection Failed:",
+      err.message
+    );
+  });

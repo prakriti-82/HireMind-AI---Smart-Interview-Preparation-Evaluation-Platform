@@ -1,99 +1,120 @@
 import axios from "axios";
 
-// =====================================
-// AXIOS INSTANCE
-// =====================================
 const instance = axios.create({
-
-  baseURL:
-    import.meta.env.VITE_API_URL ||
-    "http://localhost:5000/api",
-
-  headers: {
-    "Content-Type":
-      "application/json",
-  },
-
-  withCredentials: false,
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+  headers: { "Content-Type": "application/json" },
 });
 
 // =====================================
 // REQUEST INTERCEPTOR
 // =====================================
 instance.interceptors.request.use(
-
   (config) => {
-
-    const token =
-      localStorage.getItem(
-        "accessToken"
-      );
-
-    if (token) {
-
-      config.headers.Authorization =
-        `Bearer ${token}`;
-    }
-
+    const token = localStorage.getItem("accessToken");
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
-
-  (error) => {
-
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
+
+// =====================================
+// REFRESH QUEUE SETUP
+// =====================================
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(({ resolve, reject }) => {
+    error ? reject(error) : resolve(token);
+  });
+  failedQueue = [];
+};
 
 // =====================================
 // RESPONSE INTERCEPTOR
 // =====================================
 instance.interceptors.response.use(
-
   (response) => response,
 
-  (error) => {
+  async (error) => {
+    const original = error.config;
 
     // =====================================
-    // TOKEN EXPIRED / UNAUTHORIZED
+    // HANDLE 401 — TRY REFRESH FIRST
     // =====================================
-    if (
-      error.response &&
-      error.response.status === 401
-    ) {
+    if (error.response?.status === 401 && !original._retry) {
+      original._retry = true; // prevent infinite loop
 
-      // CLEAR STORAGE
-      localStorage.removeItem(
-        "accessToken"
-      );
+      const refreshToken = localStorage.getItem("refreshToken");
 
-      localStorage.removeItem(
-        "user"
-      );
+      // No refresh token → logout immediately
+      if (!refreshToken) {
+        logout();
+        return Promise.reject(error);
+      }
 
-      // REDIRECT TO HOME
-      if (
-        window.location.pathname !==
-        "/"
-      ) {
+      // Another request is already refreshing → queue this one
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            original.headers.Authorization = `Bearer ${token}`;
+            return instance(original); // retry with new token
+          })
+          .catch((err) => Promise.reject(err));
+      }
 
-        window.location.href = "/";
+      // This request will do the refresh
+      isRefreshing = true;
+
+      try {
+        const res = await axios.post(
+          `${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/auth/refresh`,
+          { refreshToken }
+        );
+
+        const newAccessToken = res.data.accessToken;
+        localStorage.setItem("accessToken", newAccessToken);
+
+        // Update default header for future requests
+        instance.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
+
+        processQueue(null, newAccessToken); // unblock queued requests
+        original.headers.Authorization = `Bearer ${newAccessToken}`;
+        return instance(original); // retry original request
+
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        logout(); // refresh failed → force logout
+        return Promise.reject(refreshError);
+
+      } finally {
+        isRefreshing = false;
       }
     }
 
     // =====================================
     // NETWORK ERROR
     // =====================================
-    if (
-      error.code === "ERR_NETWORK"
-    ) {
-
-      console.error(
-        "Network Error: Backend may be offline"
-      );
+    if (error.code === "ERR_NETWORK") {
+      console.error("Network Error: Backend may be offline.");
     }
 
     return Promise.reject(error);
   }
 );
+
+// =====================================
+// LOGOUT HELPER
+// =====================================
+const logout = () => {
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
+  localStorage.removeItem("user");
+  if (window.location.pathname !== "/") {
+    window.location.replace("/");
+  }
+};
 
 export default instance;

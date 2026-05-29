@@ -1,152 +1,310 @@
-import React, { useState } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+} from "react";
+
 import axios from "../../utils/axiosInstance";
+
 import {
   FiUploadCloud,
   FiBriefcase,
   FiFileText,
   FiSend,
+  FiClock,
+  FiTarget,
+  FiZap,
 } from "react-icons/fi";
 
 const InterviewPrep = () => {
 
-  const [jobRole, setJobRole] = useState("");
-  const [jobDesc, setJobDesc] = useState("");
-  const [resume, setResume] = useState(null);
+  const [jobRole, setJobRole] =
+    useState("");
 
-  const [chat, setChat] = useState([]);
+  const [jobDesc, setJobDesc] =
+    useState("");
+
+  const [resume, setResume] =
+    useState(null);
+
+  const [chat, setChat] =
+    useState([]);
+
   const [currentQuestion, setCurrentQuestion] =
     useState(null);
 
-  const [answer, setAnswer] = useState("");
+  const [answer, setAnswer] =
+    useState("");
 
-  const [loading, setLoading] = useState(false);
+  const [startLoading, setStartLoading] =
+    useState(false);
+
+  const [submitLoading, setSubmitLoading] =
+    useState(false);
 
   const [interviewStarted, setInterviewStarted] =
     useState(false);
 
-  // ======================================
+  const [interviewId, setInterviewId] =
+    useState(null);
+
+  const [questionCount, setQuestionCount] =
+    useState(0);
+
+  const [error, setError] =
+    useState("");
+
+  // =====================================
+  // NEW STATES
+  // =====================================
+  const [personality, setPersonality] =
+    useState("google-style");
+
+  const [difficulty, setDifficulty] =
+    useState("medium");
+
+  const [round, setRound] =
+    useState("technical");
+
+  const [timer, setTimer] =
+    useState(0);
+
+  const [questionStartTime, setQuestionStartTime] =
+    useState(Date.now());
+
+  const chatEndRef = useRef(null);
+
+  // =====================================
+  // AUTO SCROLL
+  // =====================================
+  useEffect(() => {
+
+    chatEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+
+  }, [chat]);
+
+  // =====================================
+  // TIMER
+  // =====================================
+  useEffect(() => {
+
+    let interval;
+
+    if (interviewStarted) {
+
+      interval = setInterval(() => {
+
+        setTimer((prev) => prev + 1);
+
+      }, 1000);
+    }
+
+    return () => clearInterval(interval);
+
+  }, [interviewStarted]);
+
+  // =====================================
+  // FORMAT TIME
+  // =====================================
+  const formatTime = (seconds) => {
+
+    const mins = Math.floor(seconds / 60);
+
+    const secs = seconds % 60;
+
+    return `${mins}:${secs
+      .toString()
+      .padStart(2, "0")}`;
+  };
+
+  // =====================================
   // FILE CHANGE
-  // ======================================
+  // =====================================
   const handleFileChange = (e) => {
+
     setResume(e.target.files[0]);
   };
 
-  // ======================================
+  // =====================================
   // START INTERVIEW
-  // ======================================
- const startInterview = async () => {
+  // =====================================
+  const startInterview = async () => {
 
-  if (!jobRole && !jobDesc && !resume) {
+    setError("");
 
-    alert(
-      "Provide job role, description or resume"
-    );
+    if (
+      !jobRole &&
+      !jobDesc &&
+      !resume
+    ) {
 
-    return;
-  }
-
-  try {
-
-    setLoading(true);
-
-    // ======================================
-    // FORM DATA
-    // ======================================
-    const formData = new FormData();
-
-    formData.append(
-      "jobRole",
-      jobRole
-    );
-
-    formData.append(
-      "jobDesc",
-      jobDesc
-    );
-
-    // ======================================
-    // APPEND RESUME
-    // ======================================
-    if (resume) {
-
-      formData.append(
-        "resume",
-        resume
+      setError(
+        "Provide job role, description or resume."
       );
+
+      return;
     }
 
-    // ======================================
-    // API CALL
-    // ======================================
-    const res = await axios.post(
-      "/ai/start-interview",
-      formData,
-      {
-        headers: {
-          "Content-Type":
-            "multipart/form-data",
-        },
+    try {
+
+      setStartLoading(true);
+
+      setChat([]);
+
+      setQuestionCount(0);
+
+      setCurrentQuestion(null);
+
+      setTimer(0);
+
+      const formData = new FormData();
+
+      formData.append(
+        "jobRole",
+        jobRole
+      );
+
+      formData.append(
+        "jobDesc",
+        jobDesc
+      );
+
+      formData.append(
+        "personality",
+        personality
+      );
+
+      formData.append(
+        "difficulty",
+        difficulty
+      );
+
+      formData.append(
+        "round",
+        round
+      );
+
+      if (resume) {
+
+        formData.append(
+          "resume",
+          resume
+        );
       }
-    );
 
-    const firstQuestion =
-      res.data.question;
+      const res = await axios.post(
+        "/ai/start-interview",
+        formData,
+        {
+          headers: {
+            "Content-Type":
+              "multipart/form-data",
+          },
+        }
+      );
 
-    setInterviewStarted(true);
+      const firstQuestion =
+        res.data.question;
 
-    setCurrentQuestion(
-      firstQuestion
-    );
+      setInterviewId(
+        res.data.interviewId
+      );
 
-    setChat([
-      {
-        type: "ai",
+      setInterviewStarted(true);
 
-        text:
-          "🚀 Interview session started successfully",
-      },
+      setCurrentQuestion(
+        firstQuestion
+      );
 
-      {
-        type: "ai",
-        text: firstQuestion,
-      },
-    ]);
+      setQuestionStartTime(Date.now());
 
-  } catch (err) {
+      setChat([
+        {
+          type: "system",
 
-    console.error(err);
+          text:
+            "🚀 ✨ Advanced AI Interview Simulator Started",
+        },
 
-    alert(
-      err.response?.data?.message ||
-      "Failed to start interview"
-    );
+        {
+          type: "ai",
+
+          text: firstQuestion,
+        },
+      ]);
+
+    } catch (err) {
+
+      console.error(err);
+
+      setError(
+        err.response?.data?.message ||
+        "Failed to start interview"
+      );
 
     } finally {
 
-      setLoading(false);
+      setStartLoading(false);
     }
   };
 
-  // ======================================
+  // =====================================
   // SUBMIT ANSWER
-  // ======================================
+  // =====================================
   const submitAnswer = async () => {
 
     if (!answer.trim()) return;
 
+    if (answer.trim().length < 10) {
+
+      setError(
+        "Please give a more detailed answer."
+      );
+
+      return;
+    }
+
+    if (answer.length > 2000) {
+
+      setError(
+        "Answer too long (max 2000 characters)."
+      );
+
+      return;
+    }
+
+    setError("");
+
     const userAnswer = answer;
 
+    const newCount =
+      questionCount + 1;
+
+    setQuestionCount(newCount);
+
+    const responseTime = Math.floor(
+      (Date.now() - questionStartTime) /
+        1000
+    );
+
     setChat((prev) => [
+
       ...prev,
 
       {
         type: "user",
+
         text: userAnswer,
       },
 
       {
         type: "ai",
-        text: "🤖 Evaluating answer...",
+
+        text:
+          "🤖 AI interviewer is analyzing your response...",
+
         loading: true,
       },
     ]);
@@ -155,168 +313,197 @@ const InterviewPrep = () => {
 
     try {
 
-      setLoading(true);
+      setSubmitLoading(true);
 
       const res = await axios.post(
         "/ai/evaluate-answer",
         {
-          question: currentQuestion,
+          interviewId,
+
+          question:
+            currentQuestion,
 
           answer: userAnswer,
 
-          jobRole,
+          questionCount:
+            newCount,
+
+          personality,
+
+          difficulty,
+
+          round,
+
+          responseTime,
         }
       );
 
       const {
         feedback,
-        score,
         nextQuestion,
+        completed,
+        finalScore,
+        finalFeedback,
+        score,
       } = res.data;
 
-      // ======================================
-      // UPDATE CHAT
-      // ======================================
       setChat((prev) => {
 
         const updated = [...prev];
 
         updated.pop();
 
+        if (completed) {
+
+          return [
+
+            ...updated,
+
+            {
+              type: "score",
+
+              score: finalScore,
+
+              text:
+                `🏆 Final Score: ${finalScore}/10`,
+            },
+
+            {
+              type: "ai",
+
+              text:
+                `💡 Final Feedback:\n${finalFeedback}`,
+            },
+
+            {
+              type: "system",
+
+              text:
+                "🎉 FAANG Interview Completed Successfully!",
+            },
+          ];
+        }
+
         return [
+
           ...updated,
 
           {
-            type: "ai",
+            type: "score",
 
-            text:
-              `📊 Score: ${score}/10\n\n` +
-              `💡 Feedback:\n${feedback}`,
+            score,
+
+            text: `Score: ${score}/10`,
           },
 
           {
             type: "ai",
 
             text:
-              nextQuestion ||
-              "🎉 Interview completed!",
+              `💡 Feedback: ${feedback}`,
+          },
+
+          {
+            type: "ai",
+
+            text: nextQuestion,
           },
         ];
       });
 
-    if (nextQuestion) {
-  setCurrentQuestion(nextQuestion);
-} else {
-  setCurrentQuestion(null);
-  setInterviewStarted(false);
-}
+      if (completed) {
+
+        setCurrentQuestion(null);
+
+        setInterviewStarted(false);
+
+      } else {
+
+        setCurrentQuestion(
+          nextQuestion
+        );
+
+        setQuestionStartTime(Date.now());
+      }
 
     } catch (err) {
 
       console.error(err);
 
-      setChat((prev) => [
-
-        ...prev,
-
-        {
-          type: "ai",
-
-          text:
-            err.response?.data?.message ||
-            "AI evaluation failed.",
-        },
-      ]);
+      setError(
+        err.response?.data?.message ||
+        "AI evaluation failed."
+      );
 
     } finally {
 
-      setLoading(false);
+      setSubmitLoading(false);
     }
+  };
+
+  // =====================================
+  // SCORE COLORS
+  // =====================================
+  const getScoreColor = (score) => {
+
+    if (score >= 8)
+      return "from-emerald-500 to-green-600";
+
+    if (score >= 5)
+      return "from-yellow-500 to-orange-500";
+
+    return "from-red-500 to-rose-600";
   };
 
   return (
 
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#dbeafe] via-[#eef4ff] to-[#c7d2fe] p-4 md:p-8">
 
-      {/* BACKGROUND BLURS */}
       <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-blue-400/30 blur-[120px] rounded-full"></div>
 
       <div className="absolute bottom-0 right-0 w-[350px] h-[350px] bg-indigo-400/30 blur-[120px] rounded-full"></div>
 
       <div className="relative z-10">
 
-        {/* HERO HEADER */}
+        {/* HERO */}
         <section className="w-full mb-8">
 
-          <div className="relative overflow-hidden bg-white/70 backdrop-blur-2xl border border-white/40 shadow-[0_8px_40px_rgba(59,130,246,0.12)] rounded-[32px] p-8 flex flex-col md:flex-row items-center justify-between transition-all duration-300 hover:shadow-[0_8px_60px_rgba(59,130,246,0.18)]">
-
-            {/* DECORATION */}
-            <div className="absolute -top-20 -right-20 w-60 h-60 bg-blue-400/20 rounded-full blur-3xl"></div>
+          <div className="relative overflow-hidden bg-white/70 backdrop-blur-2xl border border-white/40 shadow-[0_8px_40px_rgba(59,130,246,0.12)] rounded-[32px] p-8 flex flex-col md:flex-row items-center justify-between">
 
             <div className="space-y-4 relative z-10">
 
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold shadow-sm">
-
-                ✨ AI Interview Assistant
-
+                ✨  Advanced AI Interview Simulator
               </div>
 
               <h1 className="text-4xl md:text-5xl font-black text-[#0f172a] leading-tight">
 
-                Interview Preparation
+                HireMind 
+
                 <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  {" "}AI
+                  {" "}Interview AI
                 </span>
 
               </h1>
 
               <p className="text-[#475569] text-lg leading-relaxed max-w-2xl">
 
-                Practice realistic AI-powered mock
-                interviews with instant feedback,
-                scoring, and personalized questions.
-
+               Practice realistic AI interviews with smart feedback and adaptive difficulty.
               </p>
-
-              {/* STATS */}
-              <div className="flex flex-wrap gap-4 pt-2">
-
-                <div className="px-4 py-3 rounded-2xl bg-white/70 border border-white/40 shadow-sm">
-                  <h4 className="text-xl font-black text-blue-600">
-                    24/7
-                  </h4>
-                  <p className="text-xs text-gray-500">
-                    AI Availability
-                  </p>
-                </div>
-
-                <div className="px-4 py-3 rounded-2xl bg-white/70 border border-white/40 shadow-sm">
-                  <h4 className="text-xl font-black text-indigo-600">
-                    Instant
-                  </h4>
-                  <p className="text-xs text-gray-500">
-                    Feedback
-                  </p>
-                </div>
-
-              </div>
 
             </div>
 
-            <div className="relative z-10 text-7xl mt-8 md:mt-0 drop-shadow-lg animate-bounce">
-
+            <div className="relative z-10 text-7xl mt-8 md:mt-0 drop-shadow-lg animate-pulse">
               🤖
-
             </div>
 
           </div>
 
         </section>
 
-        {/* MAIN GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-          {/* LEFT PANEL */}
+          {/* LEFT */}
           <div className="bg-white/45 backdrop-blur-2xl border border-white/30 shadow-[0_8px_40px_rgba(0,0,0,0.08)] rounded-[32px] p-7">
 
             <div className="flex items-center justify-between mb-6">
@@ -328,7 +515,7 @@ const InterviewPrep = () => {
                 </h2>
 
                 <p className="text-sm text-gray-500 mt-1">
-                  Configure your AI interview
+                  Configure your AI interview session
                 </p>
 
               </div>
@@ -356,7 +543,7 @@ const InterviewPrep = () => {
                   setJobRole(e.target.value)
                 }
                 placeholder="Frontend Developer"
-                className="w-full px-5 py-4 rounded-2xl bg-white/70 border border-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-700 shadow-sm transition-all duration-300 focus:shadow-lg"
+                className="w-full px-5 py-4 rounded-2xl bg-white/70 border border-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-700 shadow-sm"
               />
 
             </div>
@@ -378,15 +565,98 @@ const InterviewPrep = () => {
                   setJobDesc(e.target.value)
                 }
                 placeholder="Paste required skills and responsibilities..."
-                className="w-full px-5 py-4 rounded-2xl bg-white/70 border border-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-700 h-36 resize-none shadow-sm transition-all duration-300 focus:shadow-lg"
+                className="w-full px-5 py-4 rounded-2xl bg-white/70 border border-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-700 h-36 resize-none shadow-sm"
               />
 
             </div>
 
-            {/* UPLOAD */}
-            <div className="relative overflow-hidden border-2 border-dashed border-blue-300 rounded-3xl p-8 text-center bg-gradient-to-br from-blue-50/70 to-indigo-50/70 hover:scale-[1.01] transition-all duration-300">
+            {/* SETTINGS */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
 
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-300/10 rounded-full blur-3xl"></div>
+              <select
+                value={personality}
+                onChange={(e) =>
+                  setPersonality(e.target.value)
+                }
+                className="px-4 py-3 rounded-2xl bg-white/70 border border-white/50 text-sm font-medium"
+              >
+
+                <option value="friendly">
+                  Friendly
+                </option>
+
+                <option value="strict">
+                  Strict
+                </option>
+
+                <option value="google-style">
+                  Google Style
+                </option>
+
+                <option value="challenging">
+                  Challenging
+                </option>
+
+              </select>
+
+              <select
+                value={difficulty}
+                onChange={(e) =>
+                  setDifficulty(e.target.value)
+                }
+                className="px-4 py-3 rounded-2xl bg-white/70 border border-white/50 text-sm font-medium"
+              >
+
+                <option value="easy">
+                  Easy
+                </option>
+
+                <option value="medium">
+                  Medium
+                </option>
+
+                <option value="hard">
+                  Hard
+                </option>
+
+              </select>
+
+              <select
+                value={round}
+                onChange={(e) =>
+                  setRound(e.target.value)
+                }
+                className="px-4 py-3 rounded-2xl bg-white/70 border border-white/50 text-sm font-medium"
+              >
+
+                <option value="technical">
+                  Technical
+                </option>
+
+                <option value="behavioral">
+                  Behavioral
+                </option>
+
+                <option value="system-design">
+                  System Design
+                </option>
+
+              </select>
+
+            </div>
+
+            {/* ERROR */}
+            {error && (
+
+              <p className="text-red-500 text-sm mb-4 font-medium">
+
+                {error}
+
+              </p>
+            )}
+
+            {/* RESUME */}
+            <div className="relative overflow-hidden border-2 border-dashed border-blue-300 rounded-3xl p-8 text-center bg-gradient-to-br from-blue-50/70 to-indigo-50/70">
 
               <input
                 type="file"
@@ -398,7 +668,7 @@ const InterviewPrep = () => {
 
               <label
                 htmlFor="resume"
-                className="cursor-pointer flex flex-col items-center relative z-10"
+                className="cursor-pointer flex flex-col items-center"
               >
 
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg">
@@ -418,12 +688,6 @@ const InterviewPrep = () => {
 
                 </span>
 
-                <span className="text-sm text-gray-500 mt-1">
-
-                  PDF or DOC format
-
-                </span>
-
               </label>
 
             </div>
@@ -431,11 +695,11 @@ const InterviewPrep = () => {
             {/* BUTTON */}
             <button
               onClick={startInterview}
-              disabled={loading}
-              className="w-full mt-7 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 text-white font-bold text-lg shadow-xl hover:scale-[1.02] hover:shadow-2xl transition-all duration-300 disabled:opacity-50"
+              disabled={startLoading}
+              className="w-full mt-7 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 text-white font-bold text-lg shadow-xl disabled:opacity-50"
             >
 
-              {loading
+              {startLoading
                 ? "Starting..."
                 : "Start Interview"}
 
@@ -443,86 +707,98 @@ const InterviewPrep = () => {
 
           </div>
 
-          {/* RIGHT PANEL */}
+          {/* RIGHT */}
           <div className="relative overflow-hidden bg-white/45 backdrop-blur-2xl border border-white/30 shadow-[0_8px_40px_rgba(0,0,0,0.08)] rounded-[32px] p-6 flex flex-col h-[760px]">
 
-            {/* GLOW */}
-            <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-indigo-400/10 rounded-full blur-3xl"></div>
+            {/* TOP BAR */}
+            <div className="flex items-center justify-between mb-5 pb-5 border-b border-white/30">
 
-            {/* TOP */}
-            <div className="flex items-center justify-between mb-5 relative z-10">
+              <div className="flex items-center gap-4">
 
-              <div>
+                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/70 text-sm font-semibold text-blue-700">
 
-                <h2 className="text-2xl font-bold text-gray-800">
-                  Interview Chat
-                </h2>
+                  <FiClock />
 
-                <p className="text-sm text-gray-500 mt-1">
-                  Real-time AI interaction
-                </p>
+                  {formatTime(timer)}
+
+                </div>
+
+                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/70 text-sm font-semibold text-purple-700">
+
+                  <FiTarget />
+
+                  Q{questionCount}/5
+
+                </div>
 
               </div>
 
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-indigo-500 to-blue-500 flex items-center justify-center text-white shadow-lg">
-                🤖
+              <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold shadow-lg">
+
+                <FiZap />
+
+                {difficulty.toUpperCase()}
+
               </div>
 
             </div>
 
             {/* CHAT */}
-            <div className="flex-1 overflow-y-auto pr-2 space-y-5 relative z-10">
-
-              {chat.length === 0 && (
-
-                <div className="flex flex-col items-center justify-center h-full text-center">
-
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-4xl shadow-2xl mb-5 animate-pulse">
-                    🤖
-                  </div>
-
-                  <h3 className="text-2xl font-bold text-gray-700">
-                    Ready for your interview
-                  </h3>
-
-                  <p className="text-gray-500 mt-2 max-w-sm">
-                    Fill your interview details and
-                    start practicing with AI.
-                  </p>
-
-                </div>
-              )}
+            <div className="flex-1 overflow-y-auto pr-2 space-y-5">
 
               {chat.map((msg, i) => (
 
-                <div
-                  key={i}
-                  className={`max-w-[85%] p-5 rounded-3xl whitespace-pre-line shadow-md transition-all duration-300 hover:scale-[1.01] ${
-                    msg.type === "user"
+                <div key={i}>
 
-                      ? "ml-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-br-md shadow-blue-300/40"
+                  {msg.type === "score" ? (
 
-                      : "bg-white/70 backdrop-blur-lg border border-white/40 text-gray-700 rounded-bl-md"
-                  }`}
-                >
+                    <div
+                      className={`w-fit mx-auto px-5 py-3 rounded-full bg-gradient-to-r ${getScoreColor(
+                        msg.score
+                      )} text-white font-bold shadow-xl text-sm`}
+                    >
 
-                  <div className="text-sm leading-relaxed">
+                      ⭐ {msg.text}
 
-                    {msg.loading
-                      ? "Typing..."
-                      : msg.text}
+                    </div>
 
-                  </div>
+                  ) : (
+
+                    <div
+                      className={`max-w-[85%] p-5 rounded-3xl whitespace-pre-line shadow-md ${
+                        msg.type === "user"
+
+                          ? "ml-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-br-md"
+
+                          : msg.type === "system"
+                          ? "mx-auto bg-gradient-to-r from-indigo-600 to-indigo-500 text-white text-center"
+                          : "bg-white/70 backdrop-blur-lg border border-white/40 text-gray-700 rounded-bl-md"
+                      }`}
+                    >
+
+                      <div className="text-sm leading-relaxed">
+
+                        {msg.loading
+                          ? "Typing..."
+                          : msg.text}
+
+                      </div>
+
+                    </div>
+                  )}
 
                 </div>
               ))}
+
+              <div ref={chatEndRef} />
+
             </div>
 
             {/* ANSWER BOX */}
             {interviewStarted &&
               currentQuestion && (
 
-              <div className="mt-5 pt-5 border-t border-white/30 relative z-10">
+              <div className="mt-5 pt-5 border-t border-white/30">
 
                 <textarea
                   value={answer}
@@ -530,18 +806,18 @@ const InterviewPrep = () => {
                     setAnswer(e.target.value)
                   }
                   placeholder="Type your answer here..."
-                  className="w-full p-5 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/40 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-700 resize-none h-32 shadow-sm transition-all duration-300 focus:shadow-lg"
+                  className="w-full p-5 rounded-2xl bg-white/70 border border-white/40 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-700 resize-none h-32"
                 />
 
                 <button
                   onClick={submitAnswer}
-                  disabled={loading}
-                  className="w-full mt-4 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-xl hover:scale-[1.01] transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2"
+                  disabled={submitLoading}
+                  className="w-full mt-4 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold shadow-xl disabled:opacity-50 flex items-center justify-center gap-2"
                 >
 
                   <FiSend />
 
-                  {loading
+                  {submitLoading
                     ? "Submitting..."
                     : "Submit Answer"}
 

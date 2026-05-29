@@ -26,9 +26,18 @@ const Layout = () => {
     navigate("/");
   };
 
-  const isActive = (path) =>
-    location.pathname === path;
+  const isActive = (path) => {
 
+  if (path === "/dashboard") {
+
+    return (
+      location.pathname === "/dashboard" ||
+      location.pathname.startsWith("/interview/")
+    );
+  }
+
+  return location.pathname === path;
+};
   return (
 
     <div className="min-h-screen bg-gradient-to-br from-[#dbeafe] via-[#eef4ff] to-[#c7d2fe] p-4 overflow-hidden">

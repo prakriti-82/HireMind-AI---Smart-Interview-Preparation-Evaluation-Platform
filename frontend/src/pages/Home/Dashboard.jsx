@@ -1,12 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../../utils/axiosInstance";
+import InterviewDetails from "../InterviewPrep/components/InterviewDetails";
 
 const Dashboard = () => {
 
   const navigate = useNavigate();
 
-  const [interviews, setInterviews] = useState([]);
+  const [interviews, setInterviews] =
+    useState([]);
+
+  const [selectedInterview, setSelectedInterview] =
+    useState(null);
+
+  const [showModal, setShowModal] =
+    useState(false);
 
   const [liveMessages] = useState([
     "🚀 AI analyzing interview performance...",
@@ -22,60 +30,55 @@ const Dashboard = () => {
   // =====================================
   // LOAD INTERVIEWS
   // =====================================
-  useEffect(() => {
+useEffect(() => {
+  const token = localStorage.getItem("accessToken");
 
-    const token =
-      localStorage.getItem("accessToken");
-
-    // ONLY redirect if completely logged out
-    if (!token) {
-
-      navigate("/preview");
-
-      return;
-    }
-
-    const fetchInterviews = async () => {
-  try {
-
-    const res = await axios.get(
-      "/ai/interviews"
-    );
-
-    setInterviews(res.data.interviews);
-
-  } catch (error) {
-
-    console.error(error);
+  if (!token) {
+    navigate("/preview");
+    return;
   }
-};
 
-fetchInterviews();
-  }, [navigate]);
+  const fetchInterviews = async () => {
+    try {
+      const res = await axios.get("/interviews/my-interviews");
+
+      setInterviews(res.data.interviews || []);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  fetchInterviews();
+}, [navigate]);
 
   // =====================================
   // LIVE MESSAGE ANIMATION
   // =====================================
   useEffect(() => {
 
-    const interval = setInterval(() => {
+    const interval =
+      setInterval(() => {
 
-      setCurrentMessage((prev) =>
-        prev === liveMessages.length - 1
-          ? 0
-          : prev + 1
-      );
+        setCurrentMessage((prev) =>
+          prev ===
+          liveMessages.length - 1
+            ? 0
+            : prev + 1
+        );
 
-    }, 2500);
+      }, 2500);
 
-    return () => clearInterval(interval);
+    return () =>
+      clearInterval(interval);
 
   }, [liveMessages.length]);
 
   // =====================================
   // SCORE COLOR
   // =====================================
-  const getScoreColor = (score) => {
+  const getScoreColor = (
+    score
+  ) => {
 
     if (score >= 8) {
       return "bg-emerald-100 text-emerald-700";
@@ -87,6 +90,36 @@ fetchInterviews();
 
     return "bg-red-100 text-red-700";
   };
+
+  // =====================================
+  // FIXED AVERAGE SCORE LOGIC
+  // =====================================
+
+  const safeInterviews = interviews.map((item) => ({
+    ...item,
+    averageScore: item.averageScore ?? 0,
+  }));
+
+  const completedInterviews =
+    safeInterviews.filter(
+      (item) =>
+        item.averageScore > 0
+    );
+
+  const averageScore =
+    completedInterviews.length
+
+      ? (
+          completedInterviews.reduce(
+            (acc, item) =>
+              acc +
+              item.averageScore,
+            0
+          ) /
+          completedInterviews.length
+        ).toFixed(1)
+
+      : "0";
 
   return (
 
@@ -133,7 +166,7 @@ fetchInterviews();
 
                 <div
                   key={currentMessage}
-                  className="bg-white/80 backdrop-blur-xl border border-white/40 text-[#0f172a] px-5 py-3 rounded-2xl shadow-lg animate-pulse text-sm font-semibold transition-all duration-500"
+                  className="bg-white/80 backdrop-blur-xl border border-white/40 text-[#1554e8] px-5 py-3 rounded-2xl shadow-lg animate-pulse text-sm font-semibold transition-all duration-500"
                 >
 
                   {liveMessages[currentMessage]}
@@ -194,16 +227,7 @@ fetchInterviews();
 
             <h2 className="text-4xl font-black text-[#0f172a] mt-3">
 
-              {interviews.length
-                ? (
-                    interviews.reduce(
-                      (acc, item) =>
-                        acc + (item.score || 0),
-                      0
-                    ) / interviews.length
-                  ).toFixed(1)
-                : "0"}
-              /10
+              {averageScore}/10
 
             </h2>
 
@@ -274,11 +298,15 @@ fetchInterviews();
 
           ) : (
 
-            interviews.map((item, index) => (
+            interviews.map((item) => (
 
               <div
-                key={index}
-                className="group relative overflow-hidden bg-white/65 backdrop-blur-2xl border border-white/40 shadow-[0_8px_30px_rgba(59,130,246,0.08)] rounded-[30px] p-6 hover:-translate-y-2 hover:shadow-[0_12px_50px_rgba(59,130,246,0.18)] transition-all duration-300"
+                key={item._id}
+                onClick={() => {
+                  setSelectedInterview(item);
+                  setShowModal(true);
+                }}
+                className="group cursor-pointer relative overflow-hidden bg-white/65 backdrop-blur-2xl border border-white/40 shadow-[0_8px_30px_rgba(59,130,246,0.08)] rounded-[30px] p-6 hover:-translate-y-2 hover:shadow-[0_12px_50px_rgba(59,130,246,0.18)] transition-all duration-300"
               >
 
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-400/10 blur-[80px] rounded-full"></div>
@@ -309,14 +337,41 @@ fetchInterviews();
 
                   </div>
 
+                  {/* SETTINGS */}
+                  <div className="flex flex-wrap gap-2 mt-4">
+
+                    <span className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
+
+                      {item.interviewerPersonality || "friendly"}
+
+                    </span>
+
+                    <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
+
+                      {item.overallDifficulty || "medium"}
+
+                    </span>
+
+                    <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">
+
+                      {item.currentRound || "technical"}
+
+                    </span>
+
+                  </div>
+
                   {/* FEEDBACK */}
-                  {item.feedback && (
+                  {item.messages?.length > 0 && (
 
                     <div className="mt-6">
 
                       <p className="text-sm text-[#475569] leading-relaxed line-clamp-4">
 
-                        {item.feedback}
+                        {
+                          item.messages[
+                            item.messages.length - 1
+                          ]?.feedback
+                        }
 
                       </p>
 
@@ -334,27 +389,49 @@ fetchInterviews();
 
                     <span
                       className={`px-4 py-2 rounded-full text-sm font-bold shadow-sm ${getScoreColor(
-                        item.score || 0
+                        item.averageScore || 0
                       )}`}
                     >
 
-                      {item.score
-                        ? `${item.score}/10`
+                      {(item.averageScore ?? 0) > 0
+                        ? `${item.averageScore}/10`
                         : "N/A"}
 
                     </span>
 
                   </div>
 
+                  {/* QUESTIONS */}
+                  <div className="mt-4 text-sm text-[#64748b]">
+
+                    Questions Answered:
+                    {" "}
+
+                    <span className="font-bold text-[#0f172a]">
+
+                      {item.messages?.length || 0}
+
+                    </span>
+
+                  </div>
+
                   {/* DATE */}
-                  {item.date && (
+                  <div className="mt-6 text-xs text-[#94a3b8]">
 
-                    <div className="mt-6 text-xs text-[#94a3b8]">
+                    {new Date(
+                      item.createdAt
+                    ).toLocaleDateString()}
 
-                      {item.date}
+                  </div>
 
-                    </div>
-                  )}
+                  {/* BUTTON */}
+                  <button
+                    className="mt-5 w-full py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-lg hover:scale-[1.02] transition-all"
+                  >
+
+                    View Full Interview
+
+                  </button>
 
                 </div>
 
@@ -366,6 +443,19 @@ fetchInterviews();
         </section>
 
       </div>
+
+      {/* INTERVIEW DETAILS MODAL */}
+      {showModal && selectedInterview && (
+
+        <InterviewDetails
+          interview={selectedInterview}
+          onClose={() => {
+            setShowModal(false);
+            setSelectedInterview(null);
+          }}
+        />
+
+      )}
 
     </div>
   );
