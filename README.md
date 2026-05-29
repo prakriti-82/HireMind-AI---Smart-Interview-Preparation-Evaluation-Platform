@@ -115,107 +115,72 @@ Protected routes for secure navigation
 | -------------------- | -------------------------------------- |
 | llama-3.1-8b-instant | Fast interview generation & evaluation |
 
-**System Architecture**
-┌──────────────────────── Frontend (React) ────────────────────────┐
-│  Auth → Dashboard → Interview → Analytics                        │
-└───────────────┬──────────────────────────────────────────────────┘
-                │  JWT API Calls
-                ▼
-┌──────────────────────── Backend (Node.js) ────────────────────────┐
-│ Express REST API                                                  │
-│                                                                   │
-│ /api/auth   → Authentication                                      │
-│ /api/ai     → Interview generation & evaluation                  │
-│ /api/user   → User profile                                         │
-│ /api/interviews → Interview history                               │
-│                                                                   │
-│ JWT Middleware + Rate Limiting + Validation                      │
-└───────────────┬──────────────────────────────────────────────────┘
-                ▼
-     ┌──────────────────────────────┐
-     │        MongoDB Atlas         │
-     │ Users | Interviews | Tokens  │
-     └──────────────┬───────────────┘
-                    ▼
-        ┌──────────────────────────┐
-        │  Groq LLaMA 3.1 AI       │
-        │  - Question Generation    │
-        │  - Answer Evaluation      │
-        └──────────────────────────┘
+**🏗️ System Architecture**
+
+HireMind AI follows a standard full-stack client–server architecture with a clear separation between frontend, backend, and AI/database services.
+
+The frontend (React) is responsible for the user interface. It handles user interactions such as login, dashboard view, resume upload, and AI interview sessions. It communicates with the backend through REST APIs using HTTP requests secured with JWT authentication.
+
+The backend (Node.js + Express) acts as the core logic layer of the application. It manages user authentication, interview creation, AI-based question generation, answer evaluation, and storing interview data. All requests from the frontend are processed here, validated using middleware, and then routed to the appropriate controllers.
+
+The database layer (MongoDB Atlas) is used to store all persistent data such as user information, interview records, scores, and authentication tokens. Mongoose is used as the ODM to structure and manage database operations.
+
+The AI service layer (Groq LLaMA model) is integrated into the backend. It is responsible for generating interview questions, evaluating user answers, and providing performance feedback. The backend sends prompts to the AI model and receives structured responses.
+
+The system works in the following flow:
+
+User interacts with the React frontend
+Frontend sends API requests to the backend
+Backend validates requests using JWT authentication
+Backend communicates with MongoDB for data storage
+Backend sends prompts to Groq AI for question generation and evaluation
+AI response is processed and sent back to frontend
+Frontend displays results to the user in real time
+
+This layered architecture ensures:
+
+Clear separation of responsibilities
+Scalable backend design
+Secure authentication flow
+Efficient AI integration
+Smooth and responsive user experience
 
 **Project Structure**
-hiremind-ai/
-│
-├── backend/
-│   ├── config/
-│   │   ├── db.js
-│   │   └── groqClient.js
-│   │
-│   ├── controllers/
-│   │   ├── authController.js
-│   │   ├── aiController.js
-│   │   ├── interviewController.js
-│   │   └── userController.js
-│   │
-│   ├── middleware/
-│   │   ├── authMiddleware.js
-│   │   ├── errorMiddleware.js
-│   │   └── uploadMiddleware.js
-│   │
-│   ├── models/
-│   │   ├── User.js
-│   │   ├── Interview.js
-│   │   └── RefreshToken.js
-│   │
-│   ├── routes/
-│   │   ├── authRoutes.js
-│   │   ├── aiRoutes.js
-│   │   ├── interviewRoutes.js
-│   │   └── userRoutes.js
-│   │
-│   ├── services/
-│   │   ├── aiService.js
-│   │   ├── jwtService.js
-│   │   └── resumeService.js
-│   │
-│   ├── utils/
-│   │   ├── generateToken.js
-│   │   ├── hashToken.js
-│   │   └── logger.js
-│   │
-│   ├── uploads/
-│   ├── app.js
-│   └── server.js
-│
-├── frontend/
-│   ├── public/
-│   ├── src/
-│   │   ├── assets/
-│   │   ├── components/
-│   │   │   ├── common/
-│   │   │   ├── layout/
-│   │   │   └── ui/
-│   │   │
-│   │   ├── pages/
-│   │   │   ├── auth/
-│   │   │   ├── dashboard/
-│   │   │   ├── interview/
-│   │   │   └── profile/
-│   │   │
-│   │   ├── routes/
-│   │   ├── services/
-│   │   ├── utils/
-│   │   ├── context/
-│   │   ├── hooks/
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   │
-│   └── vite.config.js
-│
-├── .env
-├── .gitignore
-├── package.json
-└── README.md
+# 📁 Project Structure
+
+## 🧠 Backend (Core Engine)
+- config → Database & AI configuration
+- controllers → Business logic (auth, AI, interview, user)
+- middleware → Auth, error handling, uploads
+- models → MongoDB schemas (User, Interview, RefreshToken)
+- routes → API endpoints
+- services → AI logic, JWT, resume processing
+- utils → helpers (token, logger, hashing)
+- uploads → resume storage
+- app.js → Express app setup
+- server.js → server entry point
+
+---
+
+## 🎨 Frontend (User Interface)
+- public → static assets
+- src/assets → images, icons
+- src/components
+  - common → reusable components
+  - layout → page layout components
+  - ui → buttons, cards, inputs
+- src/pages
+  - auth → login/register
+  - dashboard → analytics & history
+  - interview → AI interview flow
+  - profile → user settings
+- src/routes → app routing system
+- src/services → API calls
+- src/utils → helpers & axios config
+- src/context → global state (Auth)
+- src/hooks → custom hooks
+- App.jsx → main app
+- main.jsx → entry point
 
 
 **Getting Started**
