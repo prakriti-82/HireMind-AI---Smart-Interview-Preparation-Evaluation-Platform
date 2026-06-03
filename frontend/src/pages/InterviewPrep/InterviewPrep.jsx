@@ -379,7 +379,7 @@ const InterviewPrep = () => {
               type: "system",
 
               text:
-                "🎉 FAANG Interview Completed Successfully!",
+                "🎉  Interview Completed Successfully!",
             },
           ];
         }
