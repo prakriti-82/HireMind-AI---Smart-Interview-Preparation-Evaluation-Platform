@@ -4,6 +4,8 @@ import mongoose from "mongoose";
 import cors from "cors";
 import path from "path";
 
+console.log("🔥 server.js loaded");
+
 import authRoutes from "./routes/authRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import userRoutes from "./routes/user.js";
@@ -109,16 +111,16 @@ app.use(
 // =======================================
 const PORT = process.env.PORT || 10000;
 
-// START SERVER FIRST (REQUIRED FOR RENDER)
+// 1. START SERVER IMMEDIATELY
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
 
-// CONNECT DATABASE ONCE
+// 2. CONNECT DB SEPARATELY
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB Connected");
   })
   .catch((err) => {
-    console.log("❌ MongoDB Connection Failed:", err.message);
+    console.log("❌ MongoDB Error:", err.message);
   });
