@@ -107,30 +107,18 @@ app.use(
 // =======================================
 // DATABASE CONNECTION
 // =======================================
-mongoose
-  .connect(process.env.MONGO_URI)
+const PORT = process.env.PORT || 10000;
 
+// START SERVER FIRST (REQUIRED FOR RENDER)
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
+
+// CONNECT DATABASE ONCE
+mongoose.connect(process.env.MONGO_URI)
   .then(() => {
-
-    console.log(
-      "✅ MongoDB Connected"
-    );
-
-    const PORT =
-      process.env.PORT || 5000;
-
-    app.listen(PORT, () => {
-
-      console.log(
-        `🚀 Server running on port ${PORT}`
-      );
-    });
+    console.log("✅ MongoDB Connected");
   })
-
   .catch((err) => {
-
-    console.error(
-      "❌ MongoDB Connection Failed:",
-      err.message
-    );
+    console.log("❌ MongoDB Connection Failed:", err.message);
   });
